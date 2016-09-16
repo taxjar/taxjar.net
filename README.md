@@ -5,7 +5,7 @@ Official .NET / C# client for Sales Tax API v2. For the REST documentation, plea
 ## Authentication
 
 ```csharp
-var taxjar = new TaxjarApi("TAXJAR API KEY");
+var client = new TaxjarApi("TAXJAR API KEY");
 ```
 
 ## Usage
