@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Taxjar", "..\..\taxjar-c#\TaxJar\TaxJar\TaxJar.csproj", "{CE4FFA2A-801C-488A-BF28-0EAAB8877C2D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaxJar", "TaxJar\TaxJar.csproj", "{CE4FFA2A-801C-488A-BF28-0EAAB8877C2D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaxJar.Tests", "TaxJar.Tests\TaxJar.Tests.csproj", "{34AC1F7E-13AD-4EE2-8B1E-2AB71C85C246}"
 EndProject
@@ -29,5 +29,28 @@ Global
 		{34AC1F7E-13AD-4EE2-8B1E-2AB71C85C246}.Debug|x86.Build.0 = Debug|Any CPU
 		{34AC1F7E-13AD-4EE2-8B1E-2AB71C85C246}.Release|x86.ActiveCfg = Release|Any CPU
 		{34AC1F7E-13AD-4EE2-8B1E-2AB71C85C246}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.DotNetNamingPolicy = $1
+		$1.DirectoryNamespaceAssociation = None
+		$1.ResourceNamePolicy = FileFormatDefault
+		$0.StandardHeader = $2
+		$2.Text = 
+		$2.IncludeInNewFiles = True
+		$0.NameConventionPolicy = $3
+		$3.Rules = $4
+		$4.NamingRule = $5
+		$5.Name = Type Parameters
+		$5.AffectedEntity = TypeParameter
+		$5.VisibilityMask = VisibilityMask
+		$5.NamingStyle = PascalCase
+		$5.IncludeInstanceMembers = True
+		$5.IncludeStaticEntities = True
+		$5.RequiredPrefixes = $6
+		$6.String = T
+		$5.RequiredSuffixes = $7
+		$7.String = Exception
+		version = 1.0.0
 	EndGlobalSection
 EndGlobal
