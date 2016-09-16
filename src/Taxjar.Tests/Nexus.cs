@@ -1,8 +1,4 @@
-﻿using System;
-using System.Net;
-using System.IO;
-using Taxjar;
-using HttpMock;
+﻿using HttpMock;
 using NUnit.Framework;
 
 namespace Taxjar.Tests
