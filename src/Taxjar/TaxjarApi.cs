@@ -16,6 +16,7 @@ namespace Taxjar
 
 	public class TaxjarApi
 	{
+		internal RestClient apiClient;
 		internal readonly string apiKey;
 		internal readonly string apiUrl;
 
@@ -26,19 +27,15 @@ namespace Taxjar
 
 			if (parameters.GetType().GetProperty("apiUrl") != null)
 			{
-				this.apiUrl = parameters.GetType().GetProperty("apiUrl").ToString();
+				this.apiUrl = parameters.GetType().GetProperty("apiUrl").GetValue(parameters, null).ToString();
 			}
 
 			if (string.IsNullOrWhiteSpace(this.apiKey))
 			{
 				throw new ArgumentException("Please provide a TaxJar API key.", "apiKey");
 			}
-		}
 
-		protected virtual RestClient CreateClient()
-		{
-			var client = new RestClient(apiUrl);
-			return client;
+			this.apiClient = new RestClient(this.apiUrl);
 		}
 
 		protected virtual IRestRequest CreateRequest(string action, Method method = Method.POST)
@@ -50,20 +47,22 @@ namespace Taxjar
 			return request;
 		}
 
-		public virtual string SendRequest(string endpoint, object body, Method httpMethod = Method.POST)
+		public virtual string SendRequest(string endpoint, object body = null, Method httpMethod = Method.POST)
 		{
-			var client = CreateClient();
 			var req = CreateRequest(endpoint, httpMethod).AddJsonBody(body);
 
 			if (httpMethod == Method.GET)
 			{
-				foreach (var prop in body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+				if (body != null)
 				{
-					req.AddQueryParameter(prop.Name, prop.GetValue(body, null).ToString());
+					foreach (var prop in body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+					{
+						req.AddQueryParameter(prop.Name, prop.GetValue(body, null).ToString());
+					}
 				}
 			}
 
-			var res = client.Execute(req);
+			var res = this.apiClient.Execute(req);
 
 			if (res.StatusCode != HttpStatusCode.OK)
 			{
@@ -80,7 +79,7 @@ namespace Taxjar
 			return categoryRequest.Categories;
 		}
 
-		public virtual Rate RatesForLocation(string zip, object parameters)
+		public virtual Rate RatesForLocation(string zip, object parameters = null)
 		{
 			var res = SendRequest("rates/" + zip, parameters, Method.GET);
 			var rateRequest = JsonConvert.DeserializeObject<RateRequest>(res);
@@ -94,7 +93,7 @@ namespace Taxjar
 			return taxRequest.Tax;
 		}
 
-		public virtual List<String> ListOrders(object parameters)
+		public virtual List<String> ListOrders(object parameters = null)
 		{
 			var res = SendRequest("transactions/orders", parameters, Method.GET);
 			var ordersRequest = JsonConvert.DeserializeObject<OrdersRequest>(res);
@@ -103,7 +102,7 @@ namespace Taxjar
 
 		public virtual Order ShowOrder(int transactionId)
 		{
-			var res = SendRequest("transactions/orders/" + transactionId, Method.GET);
+			var res = SendRequest("transactions/orders/" + transactionId, null, Method.GET);
 			var orderRequest = JsonConvert.DeserializeObject<OrderRequest>(res);
 			return orderRequest.Order;
 		}
@@ -117,28 +116,29 @@ namespace Taxjar
 
 		public virtual Order UpdateOrder(object parameters)
 		{
-			var res = SendRequest("transactions/orders", parameters, Method.PUT);
+			var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters, null).ToString();
+			var res = SendRequest("transactions/orders/" + transactionId, parameters, Method.PUT);
 			var orderRequest = JsonConvert.DeserializeObject<OrderRequest>(res);
 			return orderRequest.Order;
 		}
 
 		public virtual Order DeleteOrder(int transactionId)
 		{
-			var res = SendRequest("transactions/orders/" + transactionId, Method.DELETE);
+			var res = SendRequest("transactions/orders/" + transactionId, null, Method.DELETE);
 			var orderRequest = JsonConvert.DeserializeObject<OrderRequest>(res);
 			return orderRequest.Order;
 		}
 
 		public virtual List<String> ListRefunds(object parameters)
 		{
-			var res = SendRequest("transactions/orders", parameters, Method.GET);
+			var res = SendRequest("transactions/refunds", parameters, Method.GET);
 			var refundsRequest = JsonConvert.DeserializeObject<RefundsRequest>(res);
 			return refundsRequest.Refunds;
 		}
 
 		public virtual Refund ShowRefund(int transactionId)
 		{
-			var res = SendRequest("transactions/refunds/" + transactionId, Method.GET);
+			var res = SendRequest("transactions/refunds/" + transactionId, null, Method.GET);
 			var refundRequest = JsonConvert.DeserializeObject<RefundRequest>(res);
 			return refundRequest.Refund;
 		}
@@ -152,14 +152,15 @@ namespace Taxjar
 
 		public virtual Refund UpdateRefund(object parameters)
 		{
-			var res = SendRequest("transactions/refunds", parameters, Method.PUT);
+			var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters, null).ToString();
+			var res = SendRequest("transactions/refunds/" + transactionId, parameters, Method.PUT);
 			var refundRequest = JsonConvert.DeserializeObject<RefundRequest>(res);
 			return refundRequest.Refund;
 		}
 
 		public virtual Refund DeleteRefund(int transactionId)
 		{
-			var res = SendRequest("transactions/refunds/" + transactionId, Method.DELETE);
+			var res = SendRequest("transactions/refunds/" + transactionId, null, Method.DELETE);
 			var refundRequest = JsonConvert.DeserializeObject<RefundRequest>(res);
 			return refundRequest.Refund;
 		}
