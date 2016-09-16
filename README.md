@@ -177,6 +177,12 @@ var refund = client.UpdateRefund(new
 var refund = client.DeleteRefund(321);
 ```
 
+### List nexus regions
+
+```csharp
+var nexusRegions = client.NexusRegions();
+```
+
 ### Validate a VAT number
 
 ```csharp
