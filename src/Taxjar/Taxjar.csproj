@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{CE4FFA2A-801C-488A-BF28-0EAAB8877C2D}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Taxjar</RootNamespace>
+    <AssemblyName>TaxJar</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="RestSharp">
+      <HintPath>..\packages\RestSharp.105.2.3\lib\net45\RestSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Configuration" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\taxjar-c#-shared\TaxJarShared\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TaxjarApi.cs" />
+    <Compile Include="Entities\TaxjarCategory.cs" />
+    <Compile Include="Entities\TaxjarRate.cs" />
+    <Compile Include="Entities\TaxjarTax.cs" />
+    <Compile Include="Entities\TaxjarShipping.cs" />
+    <Compile Include="Entities\TaxjarLineItem.cs" />
+    <Compile Include="Infrastructure\TaxjarException.cs" />
+    <Compile Include="Entities\TaxjarOrder.cs" />
+    <Compile Include="Entities\TaxjarRefund.cs" />
+    <Compile Include="Entities\TaxjarNexusRegion.cs" />
+    <Compile Include="Entities\TaxjarValidation.cs" />
+    <Compile Include="Entities\TaxjarSummaryRate.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Entities\" />
+    <Folder Include="Infrastructure\" />
+  </ItemGroup>
+</Project>

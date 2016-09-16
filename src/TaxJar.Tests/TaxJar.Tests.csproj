@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{34AC1F7E-13AD-4EE2-8B1E-2AB71C85C246}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Taxjar.Tests</RootNamespace>
+    <AssemblyName>TaxJar.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Castle.Core">
+      <HintPath>..\packages\Castle.Core.3.3.3\lib\net45\Castle.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="RestSharp">
+      <HintPath>..\packages\RestSharp.105.2.3\lib\net45\RestSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="Kayak">
+      <HintPath>..\packages\Kayak.0.7.2\lib\Kayak.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.3.4.1\lib\net45\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="HttpMock">
+      <HintPath>..\packages\HttpMock.1.3.0\lib\net40\HttpMock.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="Fixtures\categories.json" />
+    <None Include="Fixtures\rates.json" />
+    <None Include="Fixtures\summary_rates.json" />
+    <None Include="Fixtures\taxes.json" />
+    <None Include="Fixtures\validation.json" />
+    <None Include="Fixtures\orders\list.json" />
+    <None Include="Fixtures\orders\show.json" />
+    <None Include="Fixtures\refunds\list.json" />
+    <None Include="Fixtures\refunds\show.json" />
+    <None Include="Fixtures\nexus_regions.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Categories.cs" />
+    <Compile Include="Infrastructure\TaxjarFixture.cs" />
+    <Compile Include="Rates.cs" />
+    <Compile Include="Taxes.cs" />
+    <Compile Include="Transactions.cs" />
+    <Compile Include="Nexus.cs" />
+    <Compile Include="Validations.cs" />
+    <Compile Include="SummarizedRates.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\taxjar-c#\TaxJar\TaxJar\TaxJar.csproj">
+      <Project>{CE4FFA2A-801C-488A-BF28-0EAAB8877C2D}</Project>
+      <Name>TaxJar</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Fixtures\" />
+    <Folder Include="Infrastructure\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
