@@ -6,6 +6,12 @@ Official .NET / C# client for [SmartCalcs](http://www.taxjar.com/api/) by [TaxJa
 
 We recommend installing TaxJar.net via [NuGet](https://www.nuget.org/). Before authenticating, [get your API key from TaxJar](https://app.taxjar.com/api_sign_up/plus/).
 
+Use the NuGet package manager inside Visual Studio, Xamarin Studio, or run the following command in the [Package Manager Console](https://docs.nuget.org/ndocs/tools/package-manager-console):
+
+```
+PM> Install-Package TaxJar
+```
+
 ## Package Dependencies
 
 TaxJar.net requires the following dependencies:
