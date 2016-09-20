@@ -1,11 +1,36 @@
-# TaxJar Sales Tax API for .NET / C#
+# TaxJar Sales Tax API for .NET / C&#35;
 
-Official .NET / C# client for Sales Tax API v2. For the REST documentation, please visit [http://developers.taxjar.com/api](http://developers.taxjar.com/api).
+Official .NET / C# client for [SmartCalcs](http://www.taxjar.com/api/) by [TaxJar](http://www.taxjar.com). For the API documentation, please visit [http://developers.taxjar.com/api](http://developers.taxjar.com/api).
+
+## Package Dependencies
+
+TaxJar.net requires the following dependencies:
+
+- [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) Popular high-performance JSON framework for .NET
+- [RestSharp](https://github.com/restsharp/RestSharp) Simple REST and HTTP API Client for .NET
+
+## Getting Started
+
+We recommend installing TaxJar.net via [NuGet](https://www.nuget.org/). Before authenticating, [get your API key from TaxJar](https://app.taxjar.com/api_sign_up/plus/).
 
 ## Authentication
 
+To authenticate with our API, add a new AppSetting with your TaxJar API key to your project's `Web.config` / `App.config` file or directly supply the API key when instantiating the client.
+
+### Method A
+
+```xml
+<appSettings>
+...
+  <add key="TaxjarApiKey" value="[Your TaxJar API Key]" />
+...
+</appSettings>
+```
+
+### Method B
+
 ```csharp
-var client = new TaxjarApi("TAXJAR API KEY");
+var client = new TaxjarApi("[Your TaxJar API Key]");
 ```
 
 ## Usage
