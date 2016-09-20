@@ -196,3 +196,27 @@ var validation = client.Validate(new {
 ```csharp
 var summaryRates = client.SummaryRates();
 ```
+
+## Tests
+
+We use [NUnit](https://github.com/nunit/nunit) and [HttpMock](https://github.com/hibri/HttpMock) to directly test client methods inside Xamarin Studio.
+
+## More Information
+
+More information can be found at [TaxJar Developers](http://developers.taxjar.com).
+
+## License
+
+TaxJar.net is released under the [MIT License](https://github.com/taxjar/taxjar.net/blob/master/LICENSE.txt).
+
+## Support
+
+Bug reports and feature requests should be filed on the [GitHub issue tracking page](https://github.com/taxjar/taxjar.net/issues). 
+
+## Contributing
+
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new pull request
