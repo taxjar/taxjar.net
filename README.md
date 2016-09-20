@@ -2,6 +2,10 @@
 
 Official .NET / C# client for [SmartCalcs](http://www.taxjar.com/api/) by [TaxJar](http://www.taxjar.com). For the API documentation, please visit [http://developers.taxjar.com/api](http://developers.taxjar.com/api).
 
+## Getting Started
+
+We recommend installing TaxJar.net via [NuGet](https://www.nuget.org/). Before authenticating, [get your API key from TaxJar](https://app.taxjar.com/api_sign_up/plus/).
+
 ## Package Dependencies
 
 TaxJar.net requires the following dependencies:
@@ -9,22 +13,24 @@ TaxJar.net requires the following dependencies:
 - [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) Popular high-performance JSON framework for .NET
 - [RestSharp](https://github.com/restsharp/RestSharp) Simple REST and HTTP API Client for .NET
 
-## Getting Started
-
-We recommend installing TaxJar.net via [NuGet](https://www.nuget.org/). Before authenticating, [get your API key from TaxJar](https://app.taxjar.com/api_sign_up/plus/).
+These packages are automatically included when installing via [NuGet](https://www.nuget.org/).
 
 ## Authentication
 
-To authenticate with our API, add a new AppSetting with your TaxJar API key to your project's `Web.config` / `App.config` file or directly supply the API key when instantiating the client.
+To authenticate with our API, add a new AppSetting with your TaxJar API key to your project's `Web.config` / `App.config` file or directly supply the API key when instantiating the client:
 
 ### Method A
 
 ```xml
+<!-- Web.config / App.config -->
 <appSettings>
 ...
   <add key="TaxjarApiKey" value="[Your TaxJar API Key]" />
 ...
 </appSettings>
+```
+```csharp
+var client = new TaxjarApi();
 ```
 
 ### Method B
