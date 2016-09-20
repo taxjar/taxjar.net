@@ -24,9 +24,12 @@ namespace Taxjar
 			this.apiKey = !string.IsNullOrWhiteSpace(apiKey) ? apiKey : ConfigurationManager.AppSettings["TaxjarApiKey"];
 			this.apiUrl = TaxjarConstants.ApiUrl;
 
-			if (parameters.GetType().GetProperty("apiUrl") != null)
+			if (parameters != null)
 			{
-				this.apiUrl = parameters.GetType().GetProperty("apiUrl").GetValue(parameters, null).ToString();
+				if (parameters.GetType().GetProperty("apiUrl") != null)
+				{
+					this.apiUrl = parameters.GetType().GetProperty("apiUrl").GetValue(parameters, null).ToString();
+				}
 			}
 
 			if (string.IsNullOrWhiteSpace(this.apiKey))

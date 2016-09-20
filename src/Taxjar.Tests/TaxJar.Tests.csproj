@@ -70,6 +70,7 @@
     <Compile Include="Nexus.cs" />
     <Compile Include="Validations.cs" />
     <Compile Include="SummarizedRates.cs" />
+    <Compile Include="Client.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\taxjar-c#\TaxJar\TaxJar\TaxJar.csproj">
