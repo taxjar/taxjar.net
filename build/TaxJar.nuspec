@@ -3,7 +3,7 @@
   <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <id>TaxJar</id>
     <title>TaxJar</title>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <authors>Jake Johnson</authors>
     <owners>TaxJar</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
