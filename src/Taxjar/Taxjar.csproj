@@ -8,6 +8,7 @@
     <RootNamespace>Taxjar</RootNamespace>
     <AssemblyName>TaxJar</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <ReleaseVersion>1.0.0</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -51,6 +52,7 @@
     <Compile Include="Entities\TaxjarNexusRegion.cs" />
     <Compile Include="Entities\TaxjarValidation.cs" />
     <Compile Include="Entities\TaxjarSummaryRate.cs" />
+    <Compile Include="Entities\TaxjarError.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

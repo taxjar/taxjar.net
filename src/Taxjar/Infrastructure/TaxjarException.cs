@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using Newtonsoft.Json;
 
 namespace Taxjar
 {
@@ -8,18 +7,16 @@ namespace Taxjar
 	public class TaxjarException : ApplicationException
 	{
 		public HttpStatusCode HttpStatusCode { get; set; }
-		public string HttpStatusDescription { get; set; }
-		public object Response { get; set; }
+		public TaxjarError TaxjarError { get; set; }
 
 		public TaxjarException()
 		{
 		}
 
-		public TaxjarException(HttpStatusCode statusCode, string statusDescription, string res)
+		public TaxjarException(HttpStatusCode statusCode, TaxjarError taxjarError, string message) : base(message)
 		{
 			HttpStatusCode = statusCode;
-			HttpStatusDescription = statusDescription;
-			Response = JsonConvert.DeserializeObject(res);
+			TaxjarError = taxjarError;
 		}
 	}
 }

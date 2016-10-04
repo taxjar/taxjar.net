@@ -68,7 +68,9 @@ namespace Taxjar
 
 			if (res.StatusCode != HttpStatusCode.OK)
 			{
-				throw new TaxjarException(res.StatusCode, res.StatusDescription, res.Content);
+				var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(res.Content);
+				var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
+				throw new TaxjarException(res.StatusCode, taxjarError, errorMessage);
 			}
 
 			return res.Content;
