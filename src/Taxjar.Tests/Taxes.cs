@@ -31,7 +31,15 @@ namespace Taxjar.Tests
 				to_zip = "07446",
 				to_state = "NJ",
 				amount = 16.50,
-				shipping = 1.50
+				shipping = 1.50,
+				line_items = new[] {
+					new
+					{
+						quantity = 1,
+						unit_price = 15.0,
+						product_tax_code = "31000"
+					}
+				}
 			});
 
 			Assert.AreEqual(16.5, rates.OrderTotalAmount);
