@@ -1,5 +1,6 @@
 ﻿using HttpMock;
 using NUnit.Framework;
+using System.Net;
 
 namespace Taxjar.Tests
 {
@@ -97,7 +98,7 @@ namespace Taxjar.Tests
 
 			stubHttp.Stub(x => x.Post("/v2/transactions/orders"))
 					.Return(TaxjarFixture.GetJSON("orders/show.json"))
-					.OK();
+			        .WithStatus(HttpStatusCode.Created);
 
 			var order = client.CreateOrder(new {
 				transaction_id = "123",
@@ -204,7 +205,7 @@ namespace Taxjar.Tests
 
 			stubHttp.Stub(x => x.Post("/v2/transactions/refunds"))
 					.Return(TaxjarFixture.GetJSON("refunds/show.json"))
-					.OK();
+					.WithStatus(HttpStatusCode.Created);
 
 			var refund = client.CreateRefund(new
 			{

@@ -66,7 +66,7 @@ namespace Taxjar
 
 			var res = this.apiClient.Execute(req);
 
-			if (res.StatusCode != HttpStatusCode.OK)
+			if ((int)res.StatusCode >= 400)
 			{
 				var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(res.Content);
 				var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
