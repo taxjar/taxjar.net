@@ -102,7 +102,7 @@ var order = client.CreateOrder(new {
   to_zip = "90002",
   to_city = "Los Angeles",
   to_street = "123 Palm Grove Ln",
-  amount = 17.95,
+  amount = 17,
   shipping = 2,
   sales_tax = 0.95,
   line_items = new[] {
@@ -123,7 +123,7 @@ var order = client.CreateOrder(new {
 var order = client.UpdateOrder(new
 {
   transaction_id = "123",
-  amount = 17.95,
+  amount = 17,
   shipping = 2,
   line_items = new[] {
     new {
@@ -172,7 +172,7 @@ var refund = client.CreateRefund(new
   to_zip = "90002",
   to_city = "Los Angeles",
   to_street = "123 Palm Grove Ln",
-  amount = 17.95,
+  amount = 17,
   shipping = 2,
   sales_tax = 0.95,
   line_items = new[] {
@@ -193,7 +193,7 @@ var refund = client.CreateRefund(new
 var refund = client.UpdateRefund(new
 {
   transaction_id = "321",
-  amount = 17.95,
+  amount = 17,
   shipping = 2,
   line_items = new[] {
     new {
