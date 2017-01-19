@@ -14,7 +14,7 @@ PM> Install-Package TaxJar
 
 ## Package Dependencies
 
-TaxJar.net requires the following dependencies:
+TaxJar.net is built for **.NET Framework 4.5** and requires the following dependencies:
 
 - [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) Popular high-performance JSON framework for .NET
 - [RestSharp](https://github.com/restsharp/RestSharp) Simple REST and HTTP API Client for .NET
@@ -89,7 +89,7 @@ var orders = client.ListOrders(new {
 ### Show order transaction
 
 ```
-var order = client.ShowOrder(123);
+var order = client.ShowOrder("123");
 ```
 
 ### Create order transaction
@@ -141,7 +141,7 @@ var order = client.UpdateOrder(new
 ### Delete order transaction
 
 ```csharp
-var order = client.DeleteOrder(123);
+var order = client.DeleteOrder("123");
 ```
 
 ### List refund transactions
@@ -157,7 +157,7 @@ var refunds = client.ListRefunds(new
 ### Show refund transaction
 
 ```csharp
-var refund = client.ShowRefund(321);
+var refund = client.ShowRefund("321");
 ```
 
 ### Create refund transaction
@@ -211,7 +211,7 @@ var refund = client.UpdateRefund(new
 ### Delete refund transaction
 
 ```csharp
-var refund = client.DeleteRefund(321);
+var refund = client.DeleteRefund("321");
 ```
 
 ### List nexus regions
