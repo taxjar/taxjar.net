@@ -104,7 +104,7 @@ namespace Taxjar
 			return ordersRequest.Orders;
 		}
 
-		public virtual Order ShowOrder(int transactionId)
+		public virtual Order ShowOrder(string transactionId)
 		{
 			var res = SendRequest("transactions/orders/" + transactionId, null, Method.GET);
 			var orderRequest = JsonConvert.DeserializeObject<OrderRequest>(res);
@@ -126,7 +126,7 @@ namespace Taxjar
 			return orderRequest.Order;
 		}
 
-		public virtual Order DeleteOrder(int transactionId)
+		public virtual Order DeleteOrder(string transactionId)
 		{
 			var res = SendRequest("transactions/orders/" + transactionId, null, Method.DELETE);
 			var orderRequest = JsonConvert.DeserializeObject<OrderRequest>(res);
@@ -140,7 +140,7 @@ namespace Taxjar
 			return refundsRequest.Refunds;
 		}
 
-		public virtual Refund ShowRefund(int transactionId)
+		public virtual Refund ShowRefund(string transactionId)
 		{
 			var res = SendRequest("transactions/refunds/" + transactionId, null, Method.GET);
 			var refundRequest = JsonConvert.DeserializeObject<RefundRequest>(res);
@@ -162,7 +162,7 @@ namespace Taxjar
 			return refundRequest.Refund;
 		}
 
-		public virtual Refund DeleteRefund(int transactionId)
+		public virtual Refund DeleteRefund(string transactionId)
 		{
 			var res = SendRequest("transactions/refunds/" + transactionId, null, Method.DELETE);
 			var refundRequest = JsonConvert.DeserializeObject<RefundRequest>(res);

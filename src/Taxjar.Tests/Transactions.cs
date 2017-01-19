@@ -87,7 +87,7 @@ namespace Taxjar.Tests
 					.Return(TaxjarFixture.GetJSON("orders/show.json"))
 					.OK();
 
-			var order = client.ShowOrder(123);
+			var order = client.ShowOrder("123");
 			this.AssertOrder(order);
 		}
 
@@ -162,7 +162,7 @@ namespace Taxjar.Tests
 					.Return(TaxjarFixture.GetJSON("orders/show.json"))
 					.OK();
 
-			var order = client.DeleteOrder(123);
+			var order = client.DeleteOrder("123");
 			this.AssertOrder(order);
 		}
 
@@ -194,7 +194,7 @@ namespace Taxjar.Tests
 					.Return(TaxjarFixture.GetJSON("refunds/show.json"))
 					.OK();
 
-			var refund = client.ShowRefund(321);
+			var refund = client.ShowRefund("321");
 			this.AssertRefund(refund);
 		}
 
@@ -271,7 +271,7 @@ namespace Taxjar.Tests
 					.Return(TaxjarFixture.GetJSON("refunds/show.json"))
 					.OK();
 
-			var refund = client.DeleteRefund(321);
+			var refund = client.DeleteRefund("321");
 			this.AssertRefund(refund);
 		}
 	}
