@@ -134,7 +134,7 @@ namespace Taxjar
 	public class TaxBreakdownLineItem
 	{
 		[JsonProperty("id")]
-		public int Id { get; set; }
+		public string Id { get; set; }
 
 		[JsonProperty("taxable_amount")]
 		public decimal TaxableAmount { get; set; }

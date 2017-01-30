@@ -5,7 +5,7 @@ namespace Taxjar
 	public class LineItem
 	{
 		[JsonProperty("id")]
-		public int Id { get; set; }
+		public string Id { get; set; }
 
 		[JsonProperty("quantity")]
 		public int Quantity { get; set; }
