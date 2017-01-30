@@ -66,7 +66,7 @@ var rates = client.RatesForLocation("90002", new {
 
 ```csharp
 var rates = client.TaxForOrder(new {
-  from_country =  "US",
+  from_country = "US",
   from_zip = "07001",
   from_state = "NJ",
   to_country = "US",
