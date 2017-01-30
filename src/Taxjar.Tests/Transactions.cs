@@ -28,7 +28,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(17.95, order.Amount);
 			Assert.AreEqual(2, order.Shipping);
 			Assert.AreEqual(0.95, order.SalesTax);
-			Assert.AreEqual(1, order.LineItems[0].Id);
+			Assert.AreEqual("1", order.LineItems[0].Id);
 			Assert.AreEqual(1, order.LineItems[0].Quantity);
 			Assert.AreEqual("12-34243-0", order.LineItems[0].ProductIdentifier);
 			Assert.AreEqual("Heavy Widget", order.LineItems[0].Description);
@@ -51,7 +51,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(17.95, refund.Amount);
 			Assert.AreEqual(2, refund.Shipping);
 			Assert.AreEqual(0.95, refund.SalesTax);
-			Assert.AreEqual(1, refund.LineItems[0].Id);
+			Assert.AreEqual("1", refund.LineItems[0].Id);
 			Assert.AreEqual(1, refund.LineItems[0].Quantity);
 			Assert.AreEqual("12-34243-0", refund.LineItems[0].ProductIdentifier);
 			Assert.AreEqual("Heavy Widget", refund.LineItems[0].Description);

@@ -85,7 +85,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(0, rates.Breakdown.SpecialDistrictTaxCollectable);
 
 			// Line Items
-			Assert.AreEqual(1, rates.Breakdown.LineItems[0].Id);
+			Assert.AreEqual("1", rates.Breakdown.LineItems[0].Id);
 			Assert.AreEqual(15, rates.Breakdown.LineItems[0].TaxableAmount);
 			Assert.AreEqual(1.05, rates.Breakdown.LineItems[0].TaxCollectable);
 			Assert.AreEqual(0.07, rates.Breakdown.LineItems[0].CombinedTaxRate);
