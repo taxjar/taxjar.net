@@ -60,6 +60,8 @@
     <None Include="Fixtures\refunds\list.json" />
     <None Include="Fixtures\refunds\show.json" />
     <None Include="Fixtures\nexus_regions.json" />
+    <None Include="Fixtures\orders\delete.json" />
+    <None Include="Fixtures\refunds\delete.json" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Categories.cs" />

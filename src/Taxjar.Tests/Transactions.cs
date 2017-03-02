@@ -37,6 +37,16 @@ namespace Taxjar.Tests
 			Assert.AreEqual(0.95, order.LineItems[0].SalesTax);
 		}
 
+		public void AssertDeletedOrder(Order order)
+		{
+			Assert.AreEqual("123", order.TransactionId);
+			Assert.AreEqual(10649, order.UserId);
+			Assert.AreEqual(null, order.TransactionDate);
+			Assert.AreEqual(0, order.Amount);
+			Assert.AreEqual(0, order.Shipping);
+			Assert.AreEqual(0, order.SalesTax);
+		}
+
 		public void AssertRefund(Refund refund)
 		{
 			Assert.AreEqual("321", refund.TransactionId);
@@ -58,6 +68,16 @@ namespace Taxjar.Tests
 			Assert.AreEqual(15, refund.LineItems[0].UnitPrice);
 			Assert.AreEqual(0, refund.LineItems[0].Discount);
 			Assert.AreEqual(0.95, refund.LineItems[0].SalesTax);
+		}
+
+		public void AssertDeletedRefund(Refund refund)
+		{
+			Assert.AreEqual("321", refund.TransactionId);
+			Assert.AreEqual(10649, refund.UserId);
+			Assert.AreEqual(null, refund.TransactionDate);
+			Assert.AreEqual(0, refund.Amount);
+			Assert.AreEqual(0, refund.Shipping);
+			Assert.AreEqual(0, refund.SalesTax);
 		}
 
 		[Test]
@@ -159,11 +179,11 @@ namespace Taxjar.Tests
 			var stubHttp = HttpMockRepository.At("http://localhost:9191");
 
 			stubHttp.Stub(x => x.Delete("/v2/transactions/orders/123"))
-					.Return(TaxjarFixture.GetJSON("orders/show.json"))
+					.Return(TaxjarFixture.GetJSON("orders/delete.json"))
 					.OK();
 
 			var order = client.DeleteOrder("123");
-			this.AssertOrder(order);
+			this.AssertDeletedOrder(order);
 		}
 
 		[Test]
@@ -268,11 +288,11 @@ namespace Taxjar.Tests
 			var stubHttp = HttpMockRepository.At("http://localhost:9191");
 
 			stubHttp.Stub(x => x.Delete("/v2/transactions/refunds/321"))
-					.Return(TaxjarFixture.GetJSON("refunds/show.json"))
+					.Return(TaxjarFixture.GetJSON("refunds/delete.json"))
 					.OK();
 
 			var refund = client.DeleteRefund("321");
-			this.AssertRefund(refund);
+			this.AssertDeletedRefund(refund);
 		}
 	}
 }

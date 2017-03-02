@@ -1,0 +1,22 @@
+﻿{
+  "order": {
+    "transaction_id": "123",
+    "user_id": 10649,
+    "transaction_date": null,
+    "transaction_reference_id": null,
+    "from_country": null,
+    "from_zip": null,
+    "from_state": null,
+    "from_city": null,
+    "from_street": null,
+    "to_country": null,
+    "to_zip": null,
+    "to_state": null,
+    "to_city": null,
+    "to_street": null,
+    "amount": null,
+    "shipping": null,
+    "sales_tax": null,
+    "line_items": []
+  }
+}
