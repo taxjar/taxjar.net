@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -73,14 +73,11 @@
     <Compile Include="Client.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\taxjar-c#\TaxJar\TaxJar\TaxJar.csproj">
+    <ProjectReference Include="..\TaxJar\TaxJar.csproj">
       <Project>{CE4FFA2A-801C-488A-BF28-0EAAB8877C2D}</Project>
       <Name>TaxJar</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Fixtures\" />
-    <Folder Include="Infrastructure\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
