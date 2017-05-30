@@ -88,7 +88,7 @@ var orders = client.ListOrders(new {
 
 ### Show order transaction
 
-```
+```csharp
 var order = client.ShowOrder("123");
 ```
 
