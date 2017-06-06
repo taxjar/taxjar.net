@@ -39,12 +39,19 @@ namespace Taxjar
 		[JsonProperty("combined_rate")]
 		public decimal CombinedRate { get; set; }
 
+		[JsonProperty("freight_taxable")]
+		public bool FreightTaxable { get; set; }
+
 		// International
 		[JsonProperty("country")]
 		public string Country { get; set; }
 
 		[JsonProperty("name")]
 		public string Name { get; set; }
+
+		// Australia / SST States
+		[JsonProperty("country_rate")]
+		public decimal CountryRate { get; set; }
 
 		// European Union
 		[JsonProperty("standard_rate")]
@@ -61,8 +68,5 @@ namespace Taxjar
 
 		[JsonProperty("distance_sale_threshold")]
 		public decimal DistanceSaleThreshold { get; set; }
-
-		[JsonProperty("freight_taxable")]
-		public bool FreightTaxable { get; set; }
 	}
 }

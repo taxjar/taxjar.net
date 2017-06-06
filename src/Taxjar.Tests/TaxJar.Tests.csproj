@@ -62,6 +62,10 @@
     <None Include="Fixtures\nexus_regions.json" />
     <None Include="Fixtures\orders\delete.json" />
     <None Include="Fixtures\refunds\delete.json" />
+    <None Include="Fixtures\rates_sst.json" />
+    <None Include="Fixtures\rates_eu.json" />
+    <None Include="Fixtures\rates_ca.json" />
+    <None Include="Fixtures\rates_au.json" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Categories.cs" />
