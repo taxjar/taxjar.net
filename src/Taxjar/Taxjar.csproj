@@ -44,7 +44,6 @@
     <Compile Include="Entities\TaxjarCategory.cs" />
     <Compile Include="Entities\TaxjarRate.cs" />
     <Compile Include="Entities\TaxjarTax.cs" />
-    <Compile Include="Entities\TaxjarShipping.cs" />
     <Compile Include="Entities\TaxjarLineItem.cs" />
     <Compile Include="Infrastructure\TaxjarException.cs" />
     <Compile Include="Entities\TaxjarOrder.cs" />
@@ -53,6 +52,10 @@
     <Compile Include="Entities\TaxjarValidation.cs" />
     <Compile Include="Entities\TaxjarSummaryRate.cs" />
     <Compile Include="Entities\TaxjarError.cs" />
+    <Compile Include="Entities\TaxjarBreakdown.cs" />
+    <Compile Include="Entities\TaxjarTaxBreakdown.cs" />
+    <Compile Include="Entities\TaxjarTaxBreakdownShipping.cs" />
+    <Compile Include="Entities\TaxjarTaxBreakdownLineItem.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
