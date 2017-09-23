@@ -32,6 +32,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(1, order.LineItems[0].Quantity);
 			Assert.AreEqual("12-34243-0", order.LineItems[0].ProductIdentifier);
 			Assert.AreEqual("Heavy Widget", order.LineItems[0].Description);
+            Assert.AreEqual("20010", order.LineItems[0].ProductTaxCode);
 			Assert.AreEqual(15, order.LineItems[0].UnitPrice);
 			Assert.AreEqual(0, order.LineItems[0].Discount);
 			Assert.AreEqual(0.95, order.LineItems[0].SalesTax);
@@ -65,6 +66,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(1, refund.LineItems[0].Quantity);
 			Assert.AreEqual("12-34243-0", refund.LineItems[0].ProductIdentifier);
 			Assert.AreEqual("Heavy Widget", refund.LineItems[0].Description);
+            Assert.AreEqual("20010", refund.LineItems[0].ProductTaxCode);
 			Assert.AreEqual(15, refund.LineItems[0].UnitPrice);
 			Assert.AreEqual(0, refund.LineItems[0].Discount);
 			Assert.AreEqual(0.95, refund.LineItems[0].SalesTax);
@@ -135,6 +137,7 @@ namespace Taxjar.Tests
 						quantity = 1,
 						product_identifier = "12-34243-0",
 						description = "Heavy Widget",
+                        product_tax_code = "20010",
 						unit_price = 15,
 						sales_tax = 0.95
 					}
@@ -163,6 +166,7 @@ namespace Taxjar.Tests
 						quantity = 1,
 						product_identifier = "12-34243-0",
 						description = "Heavy Widget",
+                        product_tax_code = "20010",
 						unit_price = 15,
 						discount = 0,
 						sales_tax = 0.95
@@ -244,6 +248,7 @@ namespace Taxjar.Tests
 						quantity = 1,
 						product_identifier = "12-34243-0",
 						description = "Heavy Widget",
+                        product_tax_code = "20010",
 						unit_price = 15,
 						sales_tax = 0.95
 					}
@@ -272,6 +277,7 @@ namespace Taxjar.Tests
 						quantity = 1,
 						product_identifier = "12-34243-0",
 						description = "Heavy Widget",
+                        product_tax_code = "20010",
 						unit_price = 15,
 						discount = 0,
 						sales_tax = 0.95

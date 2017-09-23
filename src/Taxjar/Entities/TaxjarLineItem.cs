@@ -16,6 +16,9 @@ namespace Taxjar
 		[JsonProperty("description")]
 		public string Description { get; set; }
 
+		[JsonProperty("product_tax_code")]
+		public string ProductTaxCode { get; set; }
+
 		[JsonProperty("unit_price")]
 		public decimal UnitPrice { get; set; }
 
