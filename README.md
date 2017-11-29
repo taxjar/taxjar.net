@@ -14,7 +14,7 @@ PM> Install-Package TaxJar
 
 ## Package Dependencies
 
-TaxJar.net is built for **.NET Framework 4.5** and requires the following dependencies:
+TaxJar.net is built for **.NET Framework 4.5.2** and requires the following dependencies:
 
 - [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) Popular high-performance JSON framework for .NET
 - [RestSharp](https://github.com/restsharp/RestSharp) Simple REST and HTTP API Client for .NET
