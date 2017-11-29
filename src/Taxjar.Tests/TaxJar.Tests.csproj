@@ -8,7 +8,7 @@
     <RootNamespace>Taxjar.Tests</RootNamespace>
     <AssemblyName>TaxJar.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <ReleaseVersion>1.3.4</ReleaseVersion>
+    <ReleaseVersion>1.4.0</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
