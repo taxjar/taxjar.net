@@ -1,65 +1,28 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{CE4FFA2A-801C-488A-BF28-0EAAB8877C2D}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Taxjar</RootNamespace>
+    <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
+    <Description>TaxJar makes sales tax filing easier for online sellers and merchants. See local jurisdictional tax reports, get payment reminders, and more. You can use our API to access TaxJar API endpoints, which can get information on sales tax rates, categories or upload transactions.</Description>
+    <AssemblyTitle>TaxJar</AssemblyTitle>
+    <Version>1.3.4</Version>
+    <Authors>Jake Johnson</Authors>
     <AssemblyName>TaxJar</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <ReleaseVersion>1.3.4</ReleaseVersion>
+    <PackageId>TaxJar</PackageId>
+    <PackageTags>sales;tax;taxes;ecommerce</PackageTags>
+    <RootNamespace>Taxjar</RootNamespace>
+    <PackageProjectUrl>https://github.com/taxjar/taxjar.net</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/taxjar/taxjar.net/blob/master/LICENSE.txt</PackageLicenseUrl>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="RestSharp">
-      <HintPath>..\packages\RestSharp.105.2.3\lib\net45\RestSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Configuration" />
+    <Folder Include="Entities\" />
+    <Folder Include="Infrastructure\" />
+    <Folder Include="Properties\" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TaxjarApi.cs" />
-    <Compile Include="Entities\TaxjarCategory.cs" />
-    <Compile Include="Entities\TaxjarRate.cs" />
-    <Compile Include="Entities\TaxjarTax.cs" />
-    <Compile Include="Entities\TaxjarLineItem.cs" />
-    <Compile Include="Infrastructure\TaxjarException.cs" />
-    <Compile Include="Entities\TaxjarOrder.cs" />
-    <Compile Include="Entities\TaxjarRefund.cs" />
-    <Compile Include="Entities\TaxjarNexusRegion.cs" />
-    <Compile Include="Entities\TaxjarValidation.cs" />
-    <Compile Include="Entities\TaxjarSummaryRate.cs" />
-    <Compile Include="Entities\TaxjarError.cs" />
-    <Compile Include="Entities\TaxjarBreakdown.cs" />
-    <Compile Include="Entities\TaxjarTaxBreakdown.cs" />
-    <Compile Include="Entities\TaxjarTaxBreakdownShipping.cs" />
-    <Compile Include="Entities\TaxjarTaxBreakdownLineItem.cs" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="RestSharp" Version="106.1.0" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup />
+
 </Project>

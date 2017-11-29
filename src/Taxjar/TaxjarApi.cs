@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Net;
 using System.Reflection;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using RestSharp;
 
@@ -19,9 +18,9 @@ namespace Taxjar
 		internal readonly string apiKey;
 		internal readonly string apiUrl;
 
-		public TaxjarApi(string apiKey = "", object parameters = null)
+		public TaxjarApi(string apiKey, object parameters = null)
 		{
-			this.apiKey = !string.IsNullOrWhiteSpace(apiKey) ? apiKey : ConfigurationManager.AppSettings["TaxjarApiKey"];
+			this.apiKey = apiKey;
 			this.apiUrl = TaxjarConstants.ApiUrl;
 
 			if (parameters != null)
@@ -52,6 +51,7 @@ namespace Taxjar
 		public virtual string SendRequest(string endpoint, object body = null, Method httpMethod = Method.POST)
 		{
 			var req = CreateRequest(endpoint, httpMethod).AddJsonBody(body);
+            var content = new TaskCompletionSource<string>();
 
 			if (httpMethod == Method.GET)
 			{
@@ -64,16 +64,19 @@ namespace Taxjar
 				}
 			}
 
-			var res = this.apiClient.Execute(req);
+            this.apiClient.ExecuteAsync(req, res =>
+            {
+                if ((int)res.StatusCode >= 400)
+                {
+                    var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(res.Content);
+                    var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
+                    throw new TaxjarException(res.StatusCode, taxjarError, errorMessage);
+                }
 
-			if ((int)res.StatusCode >= 400)
-			{
-				var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(res.Content);
-				var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
-				throw new TaxjarException(res.StatusCode, taxjarError, errorMessage);
-			}
+                content.SetResult(res.Content);
+            });
 
-			return res.Content;
+			return content.Task.Result;
 		}
 
 		public virtual List<Category> Categories()
