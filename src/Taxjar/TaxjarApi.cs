@@ -96,6 +96,20 @@ namespace Taxjar
 			var taxRequest = JsonConvert.DeserializeObject<TaxRequest>(res);
 			return taxRequest.Tax;
 		}
+        /// <summary>
+        /// Quick Info!
+        /// Accepts an Order and returns the tax on it.  
+        /// This is an example of using the model to send the request.
+        /// If this was an apicontroller, we could use a guard clause (!ModelState.IsValid) to return a bad request
+        /// when the System.ComponentModel.DataAnnotations on the model were invalid.
+        /// </summary>
+        /// <param name="orderData">An Order model with or without nexus.</param>
+        /// <returns></returns>
+        public virtual Tax GetTaxForOrder(Order orderData) {
+            var res = SendRequest("taxes", orderData, Method.POST);
+            var TaxRequest = JsonConvert.DeserializeObject<TaxRequest>(res);
+            return TaxRequest.Tax;
+        }
 
 		public virtual List<String> ListOrders(object parameters = null)
 		{

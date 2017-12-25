@@ -68,5 +68,8 @@ namespace Taxjar
 
         [JsonProperty("line_items")]
         public List<LineItem> LineItems { get; set; }
+
+        [JsonProperty("nexus_addresses")]
+        public List<NexusAddress> NexusAddresses { get; set; }
     }
 }
