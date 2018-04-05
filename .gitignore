@@ -10,3 +10,5 @@ src/packages/*
 
 TaxJar.dll
 Taxjar.userprefs
+
+.env
