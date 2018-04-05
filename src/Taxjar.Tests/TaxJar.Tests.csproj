@@ -9,6 +9,10 @@
     <ReleaseVersion>2.0.0</ReleaseVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
   <ItemGroup>
     <Folder Include="Fixtures\" />
     <Folder Include="Infrastructure\" />
