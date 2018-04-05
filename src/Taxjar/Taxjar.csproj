@@ -12,6 +12,7 @@
     <RootNamespace>Taxjar</RootNamespace>
     <PackageProjectUrl>https://github.com/taxjar/taxjar.net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/taxjar/taxjar.net/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <ReleaseVersion>2.0.0</ReleaseVersion>
   </PropertyGroup>
 
   <ItemGroup>
