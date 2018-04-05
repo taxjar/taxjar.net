@@ -1,34 +1,34 @@
-﻿using HttpMock;
+﻿using Newtonsoft.Json;
 using NUnit.Framework;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
 	[TestFixture]
-	public class CategoriesTests
+    public class CategoriesTests
 	{
-		internal TaxjarApi client;
-
-		[SetUp]
-		public void Init()
-		{
-			this.client = new TaxjarApi("foo123", new { apiUrl = "http://localhost:9191/v2/" });
-		}
-
 		[Test]
 		public void when_listing_tax_categories()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<CategoriesResponse>(TaxjarFixture.GetJSON("categories.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/categories"))
-			        .Return(TaxjarFixture.GetJSON("categories.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/categories")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var categories = client.Categories();
+            var categories = Bootstrap.client.Categories();
 
-			Assert.AreEqual(7, categories.Count);
-			Assert.AreEqual("Digital Goods", categories[0].Name);
-			Assert.AreEqual("31000", categories[0].ProductTaxCode);
-			Assert.AreEqual("Digital products transferred electronically, meaning obtained by the purchaser by means other than tangible storage media.", categories[0].Description);
+            Assert.AreEqual(17, categories.Count);
+            Assert.AreEqual("Clothing", categories[0].Name);
+            Assert.AreEqual("20010", categories[0].ProductTaxCode);
+            Assert.AreEqual("All human wearing apparel suitable for general use", categories[0].Description);
 		}
 	}
 }

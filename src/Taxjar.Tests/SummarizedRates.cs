@@ -1,29 +1,29 @@
-﻿using HttpMock;
+﻿using Newtonsoft.Json;
 using NUnit.Framework;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
 	[TestFixture]
 	public class SummarizedRateTests
 	{
-		internal TaxjarApi client;
-
-		[SetUp]
-		public void Init()
-		{
-			this.client = new TaxjarApi("foo123", new { apiUrl = "http://localhost:9191/v2/" });
-		}
-
 		[Test]
 		public void when_summarizing_tax_rates_for_all_regions()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<SummaryRatesResponse>(TaxjarFixture.GetJSON("summary_rates.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/summary_rates"))
-					.Return(TaxjarFixture.GetJSON("summary_rates.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/summary_rates")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var summaryRates = client.SummaryRates();
+            var summaryRates = Bootstrap.client.SummaryRates();
 
 			Assert.AreEqual(3, summaryRates.Count);
 			Assert.AreEqual("US", summaryRates[0].CountryCode);

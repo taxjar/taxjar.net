@@ -1,29 +1,29 @@
-﻿using HttpMock;
+﻿using Newtonsoft.Json;
 using NUnit.Framework;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
 	[TestFixture]
 	public class ValidationTests
 	{
-		internal TaxjarApi client;
-
-		[SetUp]
-		public void Init()
-		{
-			this.client = new TaxjarApi("foo123", new { apiUrl = "http://localhost:9191/v2/" });
-		}
-
 		[Test]
 		public void when_validating_a_vat_number()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<ValidationResponse>(TaxjarFixture.GetJSON("validation.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/validation"))
-					.Return(TaxjarFixture.GetJSON("validation.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/validation")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var validation = client.Validate(new {
+            var validation = Bootstrap.client.Validate(new {
 				vat = "FR40303265045"
 			});
 
@@ -35,7 +35,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual("2016-02-10", validation.ViesResponse.RequestDate);
 			Assert.AreEqual(true, validation.ViesResponse.Valid);
 			Assert.AreEqual("SA SODIMAS", validation.ViesResponse.Name);
-			Assert.AreEqual("11 RUE AMPERE\n26600 PONT DE L ISERE", validation.ViesResponse.Address);
+			Assert.AreEqual("11 RUE AMPEREn26600 PONT DE L ISERE", validation.ViesResponse.Address);
 		}
 	}
 }

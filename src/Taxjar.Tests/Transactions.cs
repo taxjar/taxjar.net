@@ -1,21 +1,22 @@
-﻿using HttpMock;
+﻿using Newtonsoft.Json;
 using NUnit.Framework;
 using System.Net;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
 	[TestFixture]
 	public class TransactionsTests
 	{
-		internal TaxjarApi client;
+        [SetUp]
+        public void Init()
+        {
+            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191" });
+            Bootstrap.server.ResetMappings();
+        }
 
-		[SetUp]
-		public void Init()
-		{
-			this.client = new TaxjarApi("foo123", new { apiUrl = "http://localhost:9191/v2/" });
-		}
-
-		public void AssertOrder(Order order)
+		public void AssertOrder(OrderResponseAttributes order)
 		{
 			Assert.AreEqual("123", order.TransactionId);
 			Assert.AreEqual(10649, order.UserId);
@@ -38,17 +39,16 @@ namespace Taxjar.Tests
 			Assert.AreEqual(0.95, order.LineItems[0].SalesTax);
 		}
 
-		public void AssertDeletedOrder(Order order)
+        public void AssertDeletedOrder(OrderResponseAttributes order)
 		{
 			Assert.AreEqual("123", order.TransactionId);
-			Assert.AreEqual(10649, order.UserId);
 			Assert.AreEqual(null, order.TransactionDate);
 			Assert.AreEqual(0, order.Amount);
 			Assert.AreEqual(0, order.Shipping);
 			Assert.AreEqual(0, order.SalesTax);
 		}
 
-		public void AssertRefund(Refund refund)
+		public void AssertRefund(RefundResponseAttributes refund)
 		{
 			Assert.AreEqual("321", refund.TransactionId);
 			Assert.AreEqual("123", refund.TransactionReferenceId);
@@ -72,10 +72,9 @@ namespace Taxjar.Tests
 			Assert.AreEqual(0.95, refund.LineItems[0].SalesTax);
 		}
 
-		public void AssertDeletedRefund(Refund refund)
+        public void AssertDeletedRefund(RefundResponseAttributes refund)
 		{
 			Assert.AreEqual("321", refund.TransactionId);
-			Assert.AreEqual(10649, refund.UserId);
 			Assert.AreEqual(null, refund.TransactionDate);
 			Assert.AreEqual(0, refund.Amount);
 			Assert.AreEqual(0, refund.Shipping);
@@ -85,13 +84,19 @@ namespace Taxjar.Tests
 		[Test]
 		public void when_listing_order_transactions()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<OrdersResponse>(TaxjarFixture.GetJSON("orders/list.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/transactions/orders"))
-					.Return(TaxjarFixture.GetJSON("orders/list.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/orders")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var orders = client.ListOrders(new {
+			var orders = Bootstrap.client.ListOrders(new {
 				from_transaction_date = "2015/05/01",
 				to_transaction_date = "2015/05/31"
 			});
@@ -103,26 +108,38 @@ namespace Taxjar.Tests
 		[Test]
 		public void when_showing_an_order_transaction()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/transactions/orders/123"))
-					.Return(TaxjarFixture.GetJSON("orders/show.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/orders/123")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var order = client.ShowOrder("123");
-			this.AssertOrder(order);
+			var order = Bootstrap.client.ShowOrder("123");
+			AssertOrder(order);
 		}
 
 		[Test]
 		public void when_creating_an_order_transaction()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
 
-			stubHttp.Stub(x => x.Post("/v2/transactions/orders"))
-					.Return(TaxjarFixture.GetJSON("orders/show.json"))
-			        .WithStatus(HttpStatusCode.Created);
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/orders")
+                    .UsingPost()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(HttpStatusCode.Created)
+                    .WithBodyAsJson(body)
+            );
 
-			var order = client.CreateOrder(new {
+			var order = Bootstrap.client.CreateOrder(new {
 				transaction_id = "123",
 				transaction_date = "2015/05/04",
 				to_country = "US",
@@ -144,19 +161,25 @@ namespace Taxjar.Tests
 				}
 			});
 
-			this.AssertOrder(order);
+			AssertOrder(order);
 		}
 
 		[Test]
 		public void when_updating_an_order_transaction()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
 
-			stubHttp.Stub(x => x.Put("/v2/transactions/orders/123"))
-					.Return(TaxjarFixture.GetJSON("orders/show.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/orders/123")
+                    .UsingPut()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var order = client.UpdateOrder(new
+			var order = Bootstrap.client.UpdateOrder(new
 			{
 				transaction_id = "123",
 				amount = 17.95,
@@ -174,32 +197,34 @@ namespace Taxjar.Tests
 				}
 			});
 
-			this.AssertOrder(order);
+			AssertOrder(order);
 		}
 
 		[Test]
 		public void when_deleting_an_order_transaction()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
 
-			stubHttp.Stub(x => x.Delete("/v2/transactions/orders/123"))
-					.Return(TaxjarFixture.GetJSON("orders/delete.json"))
-					.OK();
-
-			var order = client.DeleteOrder("123");
-			this.AssertDeletedOrder(order);
+			var order = Bootstrap.client.DeleteOrder("123");
+			AssertDeletedOrder(order);
 		}
 
 		[Test]
 		public void when_listing_refund_transactions()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<RefundsResponse>(TaxjarFixture.GetJSON("refunds/list.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/transactions/refunds"))
-					.Return(TaxjarFixture.GetJSON("refunds/list.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/refunds")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var refunds = client.ListRefunds(new
+			var refunds = Bootstrap.client.ListRefunds(new
 			{
 				from_transaction_date = "2015/05/01",
 				to_transaction_date = "2015/05/31"
@@ -212,26 +237,38 @@ namespace Taxjar.Tests
 		[Test]
 		public void when_showing_a_refund_transaction()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/transactions/refunds/321"))
-					.Return(TaxjarFixture.GetJSON("refunds/show.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/refunds/321")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var refund = client.ShowRefund("321");
-			this.AssertRefund(refund);
+			var refund = Bootstrap.client.ShowRefund("321");
+			AssertRefund(refund);
 		}
 
 		[Test]
 		public void when_creating_a_refund_transaction()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
 
-			stubHttp.Stub(x => x.Post("/v2/transactions/refunds"))
-					.Return(TaxjarFixture.GetJSON("refunds/show.json"))
-					.WithStatus(HttpStatusCode.Created);
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/refunds")
+                    .UsingPost()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(HttpStatusCode.Created)
+                    .WithBodyAsJson(body)
+            );
 
-			var refund = client.CreateRefund(new
+			var refund = Bootstrap.client.CreateRefund(new
 			{
 				transaction_id = "321",
 				transaction_date = "2015/05/04",
@@ -255,19 +292,25 @@ namespace Taxjar.Tests
 				}
 			});
 
-			this.AssertRefund(refund);
+			AssertRefund(refund);
 		}
 
 		[Test]
 		public void when_updating_a_refund_transaction()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
 
-			stubHttp.Stub(x => x.Put("/v2/transactions/refunds/321"))
-					.Return(TaxjarFixture.GetJSON("refunds/show.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/refunds/321")
+                    .UsingPut()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(HttpStatusCode.Created)
+                    .WithBodyAsJson(body)
+            );
 
-			var refund = client.UpdateRefund(new
+			var refund = Bootstrap.client.UpdateRefund(new
 			{
 				transaction_id = "321",
 				amount = 17.95,
@@ -285,20 +328,16 @@ namespace Taxjar.Tests
 				}
 			});
 
-			this.AssertRefund(refund);
+			AssertRefund(refund);
 		}
 
 		[Test]
 		public void when_deleting_a_refund_transaction()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
 
-			stubHttp.Stub(x => x.Delete("/v2/transactions/refunds/321"))
-					.Return(TaxjarFixture.GetJSON("refunds/delete.json"))
-					.OK();
-
-			var refund = client.DeleteRefund("321");
-			this.AssertDeletedRefund(refund);
+			var refund = Bootstrap.client.DeleteRefund("321");
+			AssertDeletedRefund(refund);
 		}
 	}
 }

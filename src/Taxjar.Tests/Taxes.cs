@@ -1,29 +1,36 @@
-﻿using HttpMock;
+﻿using Newtonsoft.Json;
 using NUnit.Framework;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
 	[TestFixture]
 	public class TaxesTests
 	{
-		internal TaxjarApi client;
-
-		[SetUp]
-		public void Init()
-		{
-			this.client = new TaxjarApi("foo123", new { apiUrl = "http://localhost:9191/v2/" });
-		}
+        [SetUp]
+        public static void Init()
+        {
+            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191" });
+            Bootstrap.server.ResetMappings();
+        }
 
 		[Test]
 		public void when_calculating_sales_tax_for_an_order()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<TaxResponse>(TaxjarFixture.GetJSON("taxes.json"));
 
-			stubHttp.Stub(x => x.Post("/v2/taxes"))
-					.Return(TaxjarFixture.GetJSON("taxes.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/taxes")
+                    .UsingPost()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var rates = client.TaxForOrder(new {
+			var rates = Bootstrap.client.TaxForOrder(new {
 				from_country =  "US",
 				from_zip = "07001",
 				from_state = "NJ",
@@ -106,13 +113,19 @@ namespace Taxjar.Tests
 		[Test]
 		public void when_calculating_sales_tax_for_an_international_order()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<TaxResponse>(TaxjarFixture.GetJSON("taxes_international.json"));
 
-			stubHttp.Stub(x => x.Post("/v2/taxes"))
-					.Return(TaxjarFixture.GetJSON("taxes_international.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/taxes")
+                    .UsingPost()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var rates = client.TaxForOrder(new
+			var rates = Bootstrap.client.TaxForOrder(new
 			{
 				from_country = "FI",
 				from_zip = "00150",
@@ -162,13 +175,19 @@ namespace Taxjar.Tests
 		[Test]
 		public void when_calculating_sales_tax_for_a_canadian_order()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<TaxResponse>(TaxjarFixture.GetJSON("taxes_canada.json"));
 
-			stubHttp.Stub(x => x.Post("/v2/taxes"))
-					.Return(TaxjarFixture.GetJSON("taxes_canada.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/taxes")
+                    .UsingPost()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var rates = client.TaxForOrder(new
+			var rates = Bootstrap.client.TaxForOrder(new
 			{
 				from_country = "CA",
 				from_zip = "V6G 3E",
