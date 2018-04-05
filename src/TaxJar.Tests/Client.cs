@@ -31,8 +31,10 @@ namespace Taxjar.Tests
         [Test, Order(3)]
         public void instantiates_client_with_custom_headers()
         {
-            IDictionary<string, string> customHeaders = new Dictionary<string, string>();
-            customHeaders.Add("X-TJ-Expected-Response", "422");
+            Dictionary<string, string> customHeaders = new Dictionary<string, string>
+            {
+                { "X-TJ-Expected-Response", "422" }
+            };
 
             Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new {
                 apiUrl = "http://localhost:9191",
@@ -58,8 +60,10 @@ namespace Taxjar.Tests
         [Test, Order(6)]
         public void sets_custom_headers_via_api_config()
         {
-            IDictionary<string, string> customHeaders = new Dictionary<string, string>();
-            customHeaders.Add("X-TJ-Expected-Response", "422");
+            Dictionary<string, string> customHeaders = new Dictionary<string, string>
+            {
+                { "X-TJ-Expected-Response", "422" }
+            };
 
             Bootstrap.client.SetApiConfig("headers", customHeaders);
             Assert.AreEqual(Bootstrap.client.GetApiConfig("headers"), customHeaders);
