@@ -3,10 +3,10 @@ using Newtonsoft.Json;
 
 namespace Taxjar
 {
-	public class NexusRegionsRequest
+	public class NexusRegionsResponse
 	{
 		[JsonProperty("regions")]
-		public List<NexusRegion> Regions { get; set; }
+        public List<NexusRegion> Regions { get; set; }
 	}
 
 	public class NexusRegion
