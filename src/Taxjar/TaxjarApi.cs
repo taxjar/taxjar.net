@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 
 namespace Taxjar
@@ -80,19 +82,38 @@ namespace Taxjar
             return request;
         }
 
-        public virtual string SendRequest(string endpoint, object body = null, Method httpMethod = Method.POST)
+        protected virtual string SendRequest(string endpoint, object body = null, Method httpMethod = Method.POST)
         {
-            var req = CreateRequest(endpoint, httpMethod).AddJsonBody(body);
+            var req = CreateRequest(endpoint, httpMethod);
 
-            if (httpMethod == Method.GET)
+            if (body != null)
             {
-                if (body != null)
+                if (IsAnonymousType(body.GetType()))
                 {
-                    foreach (var prop in body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                    req.AddJsonBody(body);
+
+                    if (httpMethod == Method.GET)
                     {
-                        req.AddQueryParameter(prop.Name, prop.GetValue(body).ToString());
+                        foreach (var prop in body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                        {
+                            req.AddQueryParameter(prop.Name, prop.GetValue(body).ToString());
+                        }
                     }
                 }
+                else
+                {
+                    req.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
+
+                    if (httpMethod == Method.GET)
+                    {
+                        body = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(body));
+
+                        foreach (var prop in JObject.FromObject(body).Properties())
+                        {
+                            req.AddQueryParameter(prop.Name, prop.Value.ToString());
+                        }    
+                    }
+                }   
             }
 
             var res = this.apiClient.Execute(req);
@@ -105,6 +126,19 @@ namespace Taxjar
             }
 
             return res.Content;
+        }
+
+        protected virtual bool IsAnonymousType(Type type)
+        {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+
+            return Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false)
+                && type.IsGenericType && type.Name.Contains("AnonymousType")
+                && (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"))
+                && (type.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;   
         }
 
         public virtual List<Category> Categories()
