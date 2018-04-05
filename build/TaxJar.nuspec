@@ -9,8 +9,18 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectUrl>https://github.com/taxjar/taxjar.net</projectUrl>
     <licenseUrl>https://github.com/taxjar/taxjar.net/blob/master/LICENSE.txt</licenseUrl>
+    <iconUrl>https://github.com/taxjar/taxjar.net/raw/master/build/taxjar-icon.png</iconUrl>
     <description>TaxJar makes sales tax filing easier for online sellers and merchants. See local jurisdictional tax reports, get payment reminders, and more. You can use our API to access TaxJar API endpoints, which can get information on sales tax rates, categories or upload transactions.</description>
+    <releaseNotes>
+- .NET Standard 2.0 Support
+- Sandbox Environment w/ Custom Headers
+- Request entities to pass data without anonymous types
+- Refactor specs to use WireMock.Net and sandbox
+- README updates
+    </releaseNotes>
+    <language>en-US</language>
     <tags>sales tax taxes ecommerce</tags>
+    <copyright>Copyright (c) 2018 TaxJar</copyright>
     <dependencies>
       <group>
         <dependency id="Newtonsoft.Json" version="11.0.2" />
