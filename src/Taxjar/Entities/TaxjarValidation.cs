@@ -4,13 +4,13 @@ using Newtonsoft.Json;
 
 namespace Taxjar
 {
-	public class ValidationRequest
+	public class ValidationResponse
 	{
 		[JsonProperty("validation")]
-		public Validation Validation { get; set; }
+        public ValidationResponseAttributes Validation { get; set; }
 	}
 
-	public class Validation
+	public class ValidationResponseAttributes
 	{
 		[JsonProperty("valid")]
 		public bool Valid { get; set; }
@@ -45,4 +45,10 @@ namespace Taxjar
 		[JsonProperty("address")]
 		public string Address { get; set; }
 	}
+
+    public class Validation
+    {
+        [JsonProperty("vat")]
+        public string Vat { get; set; }
+    }
 }

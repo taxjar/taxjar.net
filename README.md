@@ -14,7 +14,7 @@ PM> Install-Package TaxJar
 
 ## Package Dependencies
 
-TaxJar.net is built for **.NET Framework 4.5.2** and requires the following dependencies:
+TaxJar.net comes with assemblies for **.NET 4.5.2** and **.NET Standard 2.0**. It requires the following dependencies:
 
 - [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) Popular high-performance JSON framework for .NET
 - [RestSharp](https://github.com/restsharp/RestSharp) Simple REST and HTTP API Client for .NET
@@ -234,9 +234,60 @@ var validation = client.Validate(new {
 var summaryRates = client.SummaryRates();
 ```
 
+## Sandbox Environment
+
+You can easily configure the client to use the [TaxJar Sandbox](https://developers.taxjar.com/api/reference/#sandbox-environment):
+
+```csharp
+var client = new TaxjarApi("[Your TaxJar Sandbox API Key]", new { apiUrl = "https://api.sandbox.taxjar.com" });
+```
+
+For testing specific [error response codes](https://developers.taxjar.com/api/reference/#errors), pass the custom `X-TJ-Expected-Response` header:
+
+```csharp
+client.SetApiConfig("headers", new Dictionary<string, string>
+{
+  { "X-TJ-Expected-Response", "422" }
+});
+```
+
+## Error Handling
+
+When invalid data is sent to TaxJar or we encounter an error, we’ll throw a `TaxjarException` with the HTTP status code and error message. To catch these exceptions, refer to the example below. [Click here](https://developers.taxjar.com/api/guides/csharp/#error-handling) for a list of common error response classes.
+
+```csharp
+using Taxjar;
+var client = new TaxjarApi();
+
+try
+{
+  // Invalid request
+  var order = client.CreateOrder(new {
+    transaction_date = "2015/05/04",
+    to_country = "US",
+    to_state = "CA",
+    to_zip = "90002",
+    amount = 17.45,
+    shipping = 1.5,
+    sales_tax = 0.95
+  });
+}
+catch(TaxjarException e)
+{
+  // 406 Not Acceptable – transaction_id is missing
+  e.TaxjarError.Error;
+  e.TaxjarError.Detail;
+  e.TaxjarError.StatusCode;
+}
+```
+
 ## Tests
 
-We use [NUnit](https://github.com/nunit/nunit) and [HttpMock](https://github.com/hibri/HttpMock) to directly test client methods inside Xamarin Studio.
+We use [NUnit](https://github.com/nunit/nunit) and [WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) for testing. Before running the specs, create a `.env` file inside the `Taxjar.Tests` directory with your sandbox API key:
+
+```
+TAXJAR_API_KEY=YOUR_TAXJAR_SANDBOX_API_KEY
+```
 
 ## More Information
 

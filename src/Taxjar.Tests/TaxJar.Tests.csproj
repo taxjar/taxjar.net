@@ -1,90 +1,35 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{34AC1F7E-13AD-4EE2-8B1E-2AB71C85C246}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <TargetFrameworks>netcoreapp2.0;net452</TargetFrameworks>
     <RootNamespace>Taxjar.Tests</RootNamespace>
     <AssemblyName>TaxJar.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <ReleaseVersion>1.4.0</ReleaseVersion>
+    <IsPackable>false</IsPackable>
+    <SignAssembly>true</SignAssembly>
+    <ReleaseVersion>2.0.0</ReleaseVersion>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="RestSharp">
-      <HintPath>..\packages\RestSharp.106.1.0\lib\net452\RestSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Web" />
-    <Reference Include="HttpMock">
-      <HintPath>..\packages\HttpMock.2.2.0\lib\net45\HttpMock.dll</HintPath>
-    </Reference>
-    <Reference Include="log4net">
-      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.3.9.0\lib\net45\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="Kayak">
-      <HintPath>..\packages\Kayak.0.7.2\lib\Kayak.dll</HintPath>
-    </Reference>
+    <Folder Include="Fixtures\" />
+    <Folder Include="Infrastructure\" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Include="packages.config" />
-    <None Include="Fixtures\categories.json" />
-    <None Include="Fixtures\rates.json" />
-    <None Include="Fixtures\summary_rates.json" />
-    <None Include="Fixtures\taxes.json" />
-    <None Include="Fixtures\validation.json" />
-    <None Include="Fixtures\orders\list.json" />
-    <None Include="Fixtures\orders\show.json" />
-    <None Include="Fixtures\refunds\list.json" />
-    <None Include="Fixtures\refunds\show.json" />
-    <None Include="Fixtures\nexus_regions.json" />
-    <None Include="Fixtures\orders\delete.json" />
-    <None Include="Fixtures\refunds\delete.json" />
-    <None Include="Fixtures\rates_sst.json" />
-    <None Include="Fixtures\rates_eu.json" />
-    <None Include="Fixtures\rates_ca.json" />
-    <None Include="Fixtures\rates_au.json" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <PackageReference Include="NUnit" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="RestSharp" Version="106.2.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="WireMock.Net.StandAlone" Version="1.0.3.14" />
+    <PackageReference Include="DotNetEnv" Version="1.1.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Categories.cs" />
-    <Compile Include="Infrastructure\TaxjarFixture.cs" />
-    <Compile Include="Rates.cs" />
-    <Compile Include="Taxes.cs" />
-    <Compile Include="Transactions.cs" />
-    <Compile Include="Nexus.cs" />
-    <Compile Include="Validations.cs" />
-    <Compile Include="SummarizedRates.cs" />
-    <Compile Include="Client.cs" />
+    <ProjectReference Include="..\TaxJar\TaxJar.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\TaxJar\TaxJar.csproj">
-      <Project>{CE4FFA2A-801C-488A-BF28-0EAAB8877C2D}</Project>
-      <Name>TaxJar</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+
 </Project>

@@ -1,66 +1,33 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{CE4FFA2A-801C-488A-BF28-0EAAB8877C2D}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Taxjar</RootNamespace>
+    <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
+    <Description>TaxJar makes sales tax filing easier for online sellers and merchants. See local jurisdictional tax reports, get payment reminders, and more. You can use our API to access TaxJar API endpoints, which can get information on sales tax rates, categories or upload transactions.</Description>
+    <AssemblyTitle>TaxJar</AssemblyTitle>
+    <Version>2.0.0</Version>
+    <Authors>Jake Johnson</Authors>
     <AssemblyName>TaxJar</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <ReleaseVersion>1.4.0</ReleaseVersion>
+    <PackageId>TaxJar</PackageId>
+    <PackageTags>sales;tax;taxes;ecommerce</PackageTags>
+    <RootNamespace>Taxjar</RootNamespace>
+    <PackageProjectUrl>https://github.com/taxjar/taxjar.net</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/taxjar/taxjar.net/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <ReleaseVersion>2.0.0</ReleaseVersion>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Web" />
-    <Reference Include="RestSharp">
-      <HintPath>..\packages\RestSharp.106.1.0\lib\net452\RestSharp.dll</HintPath>
-    </Reference>
+    <Folder Include="Entities\" />
+    <Folder Include="Infrastructure\" />
+    <Folder Include="Properties\" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TaxjarApi.cs" />
-    <Compile Include="Entities\TaxjarCategory.cs" />
-    <Compile Include="Entities\TaxjarRate.cs" />
-    <Compile Include="Entities\TaxjarTax.cs" />
-    <Compile Include="Entities\TaxjarLineItem.cs" />
-    <Compile Include="Infrastructure\TaxjarException.cs" />
-    <Compile Include="Entities\TaxjarOrder.cs" />
-    <Compile Include="Entities\TaxjarRefund.cs" />
-    <Compile Include="Entities\TaxjarNexusRegion.cs" />
-    <Compile Include="Entities\TaxjarValidation.cs" />
-    <Compile Include="Entities\TaxjarSummaryRate.cs" />
-    <Compile Include="Entities\TaxjarError.cs" />
-    <Compile Include="Entities\TaxjarBreakdown.cs" />
-    <Compile Include="Entities\TaxjarTaxBreakdown.cs" />
-    <Compile Include="Entities\TaxjarTaxBreakdownShipping.cs" />
-    <Compile Include="Entities\TaxjarTaxBreakdownLineItem.cs" />
+    <PackageReference Include="RestSharp" Version="106.2.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup />
+
 </Project>

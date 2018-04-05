@@ -1,14 +1,49 @@
 ﻿{
   "categories": [
     {
+      "name": "Clothing",
+      "product_tax_code": "20010",
+      "description": "All human wearing apparel suitable for general use"
+    },
+    {
+      "name": "Software as a Service",
+      "product_tax_code": "30070",
+      "description": "Pre-written software, delivered electronically, but access remotely."
+    },
+    {
       "name": "Digital Goods",
       "product_tax_code": "31000",
       "description": "Digital products transferred electronically, meaning obtained by the purchaser by means other than tangible storage media."
     },
     {
-      "name": "Clothing",
-      "product_tax_code": "20010",
-      "description": " All human wearing apparel suitable for general use"
+      "name": "Candy",
+      "product_tax_code": "40010",
+      "description": "Candy and similar items"
+    },
+    {
+      "name": "Supplements",
+      "product_tax_code": "40020",
+      "description": "Non-food dietary supplements"
+    },
+    {
+      "name": "Food & Groceries",
+      "product_tax_code": "40030",
+      "description": "Food for humans consumption, unprepared"
+    },
+    {
+      "name": "Soft Drinks",
+      "product_tax_code": "40050",
+      "description": "Soft drinks, soda, and other similar beverages. Does not include fruit juices and water."
+    },
+    {
+      "name": "Bottled Water",
+      "product_tax_code": "40060",
+      "description": "Bottled, drinkable water for human consumption."
+    },
+    {
+      "name": "Prepared Foods",
+      "product_tax_code": "41000",
+      "description": "Foods intended for on-site consumption. Ex. Restaurant meals."
     },
     {
       "name": "Non-Prescription",
@@ -21,19 +56,34 @@
       "description": "Drugs for human use with a prescription"
     },
     {
-      "name": "Food & Groceries",
-      "product_tax_code": "40030",
-      "description": "Food for humans consumption, unprepared"
+      "name": "Books",
+      "product_tax_code": "81100",
+      "description": "Books, printed"
+    },
+    {
+      "name": "Textbook",
+      "product_tax_code": "81110",
+      "description": "Textbooks, printed"
+    },
+    {
+      "name": "Religious Books",
+      "product_tax_code": "81120",
+      "description": "Religious books and manuals, printed"
+    },
+    {
+      "name": "Magazines & Subscriptions",
+      "product_tax_code": "81300",
+      "description": "Periodicals, printed, sold by subscription"
+    },
+    {
+      "name": "Magazine",
+      "product_tax_code": "81310",
+      "description": "Periodicals, printed, sold individually"
     },
     {
       "name": "Other Exempt",
       "product_tax_code": "99999",
       "description": "Item is exempt"
-    },
-    {
-      "name": "Software as a Service",
-      "product_tax_code": "30070",
-      "description": "Pre-written software, delivered electronically, but access remotely."
     }
   ]
 }

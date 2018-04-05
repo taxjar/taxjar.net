@@ -1,29 +1,29 @@
-﻿using HttpMock;
+﻿using Newtonsoft.Json;
 using NUnit.Framework;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
 	[TestFixture]
-	public class RatesTests
+    public class RatesTests
 	{
-		internal TaxjarApi client;
-
-		[SetUp]
-		public void Init()
-		{
-			this.client = new TaxjarApi("foo123", new { apiUrl = "http://localhost:9191/v2/" });
-		}
-
 		[Test]
 		public void when_showing_tax_rates_for_a_location()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/rates/90002"))
-					.Return(TaxjarFixture.GetJSON("rates.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/rates/90002")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var rates = client.RatesForLocation("90002");
+			var rates = Bootstrap.client.RatesForLocation("90002");
 
 			Assert.AreEqual("90002", rates.Zip);
 			Assert.AreEqual("CA", rates.State);
@@ -40,13 +40,19 @@ namespace Taxjar.Tests
 		[Test]
 		public void when_showing_tax_rates_for_a_location_sst()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates_sst.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/rates/05495-2086"))
-					.Return(TaxjarFixture.GetJSON("rates_sst.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/rates/05495-2086")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var rates = client.RatesForLocation("05495-2086");
+			var rates = Bootstrap.client.RatesForLocation("05495-2086");
 
 			Assert.AreEqual("05495-2086", rates.Zip);
             Assert.AreEqual("US", rates.Country);
@@ -65,13 +71,19 @@ namespace Taxjar.Tests
 		[Test]
 		public void when_showing_tax_rates_for_a_location_ca()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates_ca.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/rates/V5K0A1"))
-					.Return(TaxjarFixture.GetJSON("rates_ca.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/rates/V5K0A1")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var rates = client.RatesForLocation("V5K0A1");
+			var rates = Bootstrap.client.RatesForLocation("V5K0A1");
 
 			Assert.AreEqual("V5K0A1", rates.Zip);
             Assert.AreEqual("Vancouver", rates.City);
@@ -84,13 +96,19 @@ namespace Taxjar.Tests
 		[Test]
 		public void when_showing_tax_rates_for_a_location_au()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates_au.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/rates/2060"))
-					.Return(TaxjarFixture.GetJSON("rates_au.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/rates/2060")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var rates = client.RatesForLocation("2060");
+			var rates = Bootstrap.client.RatesForLocation("2060");
 
 			Assert.AreEqual("2060", rates.Zip);
 			Assert.AreEqual("AU", rates.Country);
@@ -102,13 +120,19 @@ namespace Taxjar.Tests
 		[Test]
 		public void when_showing_tax_rates_for_a_location_eu()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates_eu.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/rates/00150"))
-					.Return(TaxjarFixture.GetJSON("rates_eu.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/rates/00150")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var rates = client.RatesForLocation("00150");
+			var rates = Bootstrap.client.RatesForLocation("00150");
 
 			Assert.AreEqual("FI", rates.Country);
             Assert.AreEqual("Finland", rates.Name);

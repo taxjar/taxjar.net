@@ -1,29 +1,29 @@
-﻿using HttpMock;
+﻿using Newtonsoft.Json;
 using NUnit.Framework;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
 	[TestFixture]
-	public class NexusTests
+    public class NexusTests
 	{
-		internal TaxjarApi client;
-
-		[SetUp]
-		public void Init()
-		{
-			this.client = new TaxjarApi("foo123", new { apiUrl = "http://localhost:9191/v2/" });
-		}
-
 		[Test]
 		public void when_listing_nexus_regions()
 		{
-			var stubHttp = HttpMockRepository.At("http://localhost:9191");
+            var body = JsonConvert.DeserializeObject<NexusRegionsResponse>(TaxjarFixture.GetJSON("nexus_regions.json"));
 
-			stubHttp.Stub(x => x.Get("/v2/nexus/regions"))
-					.Return(TaxjarFixture.GetJSON("nexus_regions.json"))
-					.OK();
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/nexus/regions")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
 
-			var nexusRegions = client.NexusRegions();
+            var nexusRegions = Bootstrap.client.NexusRegions();
 
 			Assert.AreEqual(3, nexusRegions.Count);
 			Assert.AreEqual("US", nexusRegions[0].CountryCode);

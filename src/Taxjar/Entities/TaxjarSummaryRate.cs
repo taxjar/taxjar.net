@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Taxjar
 {
-	public class SummaryRatesRequest
+	public class SummaryRatesResponse
 	{
 		[JsonProperty("summary_rates")]
 		public List<SummaryRate> SummaryRates { get; set; }
