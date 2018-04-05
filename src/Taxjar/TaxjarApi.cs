@@ -50,7 +50,8 @@ namespace Taxjar
 
         public virtual void SetApiConfig(string key, object value)
         {
-            if (key == "apiUrl") {
+            if (key == "apiUrl")
+            {
                 value += "/" + TaxjarConstants.ApiVersion + "/";
             }
 
@@ -64,7 +65,8 @@ namespace Taxjar
 
         protected virtual IRestRequest CreateRequest(string action, Method method = Method.POST)
         {
-            var request = new RestRequest(action, method) {
+            var request = new RestRequest(action, method)
+            {
                 RequestFormat = DataFormat.Json
             };
 
@@ -95,7 +97,8 @@ namespace Taxjar
 
             var res = this.apiClient.Execute(req);
 
-            if ((int) res.StatusCode >= 400) {
+            if ((int) res.StatusCode >= 400)
+            {
                 var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(res.Content);
                 var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
                 throw new TaxjarException(res.StatusCode, taxjarError, errorMessage);                
