@@ -234,6 +234,42 @@ namespace Taxjar
             return refundRequest.Refund;
         }
 
+        public virtual List<String> ListCustomers(object parameters = null)
+        {
+            var res = SendRequest("customers", parameters, Method.GET);
+            var customersRequest = JsonConvert.DeserializeObject<CustomersResponse>(res);
+            return customersRequest.Customers;
+        }
+
+        public virtual CustomerResponseAttributes ShowCustomer(string customerId)
+        {
+            var res = SendRequest("customers/" + customerId, null, Method.GET);
+            var customerRequest = JsonConvert.DeserializeObject<CustomerResponse>(res);
+            return customerRequest.Customer;
+        }
+
+        public virtual CustomerResponseAttributes CreateCustomer(object parameters)
+        {
+            var res = SendRequest("customers", parameters, Method.POST);
+            var customerRequest = JsonConvert.DeserializeObject<CustomerResponse>(res);
+            return customerRequest.Customer;
+        }
+
+        public virtual CustomerResponseAttributes UpdateCustomer(object parameters)
+        {
+            var customerId = parameters.GetType().GetProperty("customer_id").GetValue(parameters).ToString();
+            var res = SendRequest("customers/" + customerId, parameters, Method.PUT);
+            var customerRequest = JsonConvert.DeserializeObject<CustomerResponse>(res);
+            return customerRequest.Customer;
+        }
+
+        public virtual CustomerResponseAttributes DeleteCustomer(string customerId)
+        {
+            var res = SendRequest("customers/" + customerId, null, Method.DELETE);
+            var customerRequest = JsonConvert.DeserializeObject<CustomerResponse>(res);
+            return customerRequest.Customer;
+        }
+
         public virtual List<NexusRegion> NexusRegions()
         {
             var res = SendRequest("nexus/regions", null, Method.GET);
