@@ -214,6 +214,70 @@ var refund = client.UpdateRefund(new
 var refund = client.DeleteRefund("321");
 ```
 
+### List customers
+
+```csharp
+var customers = client.ListCustomers();
+```
+
+### Show customer
+
+```csharp
+var customer = client.ShowCustomer("123");
+```
+
+### Create customer
+
+```csharp
+var customer = client.CreateCustomer(new {
+  customer_id = "123",
+  exemption_type = "wholesale",
+  name = "Dunder Mifflin Paper Company",
+  exempt_regions = new[] {
+    new {
+      country = "US",
+      state = "FL"
+    },
+    new {
+      country = "US",
+      state = "PA"
+    }
+  },
+  country = "US",
+  state = "PA",
+  zip = "18504",
+  city = "Scranton",
+  street = "1725 Slough Avenue"
+});
+```
+
+### Update customer
+
+```csharp
+var customer = client.UpdateCustomer(new {
+  customer_id = "123",
+  exemption_type = "wholesale",
+  name = "Sterling Cooper",
+  exempt_regions = new[] {
+    new {
+      country = "US",
+      state = "NY"
+    }
+  },
+  country = "US",
+  state = "NY",
+  zip = "10010",
+  city = "New York",
+  street = "405 Madison Ave"
+});
+```
+
+### Delete customer
+
+```csharp
+var customer = client.DeleteCustomer("123");
+```
+
 ### List nexus regions
 
 ```csharp
