@@ -123,6 +123,9 @@ namespace Taxjar
         [JsonProperty("sales_tax", NullValueHandling = NullValueHandling.Ignore)]
         public decimal SalesTax { get; set; }
 
+        [JsonProperty("customer_id")]
+        public string CustomerId { get; set; }
+
         [JsonProperty("line_items")]
         public List<LineItem> LineItems { get; set; }
     }

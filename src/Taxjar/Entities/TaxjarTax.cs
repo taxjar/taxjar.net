@@ -77,6 +77,9 @@ namespace Taxjar
         [JsonProperty("shipping", NullValueHandling = NullValueHandling.Ignore)]
         public decimal Shipping { get; set; }
 
+        [JsonProperty("customer_id")]
+        public string CustomerId { get; set; }
+
         [JsonProperty("nexus_addresses")]
         public List<NexusAddress> NexusAddresses { get; set; }
 
