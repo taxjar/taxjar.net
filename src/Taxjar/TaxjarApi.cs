@@ -125,6 +125,11 @@ namespace Taxjar
                 throw new TaxjarException(res.StatusCode, taxjarError, errorMessage);                
             }
 
+            if(res.ResponseStatus != ResponseStatus.Completed)
+            {
+                throw new Exception(res.ErrorMessage, res.ErrorException);
+            }
+
             return res.Content;
         }
 
