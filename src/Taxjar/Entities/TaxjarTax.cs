@@ -35,6 +35,9 @@ namespace Taxjar
 		[JsonProperty("tax_source")]
 		public string TaxSource { get; set; }
 
+        [JsonProperty("jurisdictions")]
+        public TaxJurisdictions Jurisdictions { get; set; }
+
 		[JsonProperty("breakdown")]
 		public TaxBreakdown Breakdown { get; set; }
 	}
