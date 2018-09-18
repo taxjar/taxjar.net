@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using NUnit.Framework;
 using WireMock.RequestBuilders;
@@ -45,19 +46,30 @@ namespace Taxjar.Tests
         }
 
         [Test, Order(4)]
+        public void instantiates_client_with_custom_timeout()
+        {
+            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new
+            {
+                timeout = 30
+            });
+
+            Assert.AreEqual(Bootstrap.client.GetApiConfig("timeout"), 30);
+        }
+
+        [Test, Order(5)]
         public void get_api_config()
         {
             Assert.AreEqual(Bootstrap.client.GetApiConfig("apiUrl"), "http://localhost:9191/v2/");
         }
 
-        [Test, Order(5)]
+        [Test, Order(6)]
         public void set_api_config()
         {
             Bootstrap.client.SetApiConfig("apiUrl", "https://api.sandbox.taxjar.com");
             Assert.AreEqual(Bootstrap.client.GetApiConfig("apiUrl"), "https://api.sandbox.taxjar.com/v2/");
         }
 
-        [Test, Order(6)]
+        [Test, Order(7)]
         public void sets_custom_headers_via_api_config()
         {
             Dictionary<string, string> customHeaders = new Dictionary<string, string>
@@ -69,7 +81,7 @@ namespace Taxjar.Tests
             Assert.AreEqual(Bootstrap.client.GetApiConfig("headers"), customHeaders);
         }
 
-		[Test, Order(7)]
+		[Test, Order(8)]
 		public void returns_exception_with_invalid_api_token()
 		{
             Bootstrap.server.Given(
@@ -90,5 +102,26 @@ namespace Taxjar.Tests
 			Assert.AreEqual("Not authorized for route 'GET /v2/categories'", taxjarException.TaxjarError.Detail);
 			Assert.AreEqual("401", taxjarException.TaxjarError.StatusCode);
 		}
+
+        [Test, Order(9)]
+        public void returns_exception_with_timeout()
+        {
+            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191", timeout = 1 });
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/categories")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBody("")
+                    .WithDelay(TimeSpan.FromSeconds(5))
+            );
+
+            var systemException = Assert.Throws<Exception>(() => Bootstrap.client.Categories());
+
+            Assert.AreEqual("The operation has timed out.", systemException.Message);
+        }
 	}
 }
