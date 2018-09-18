@@ -58,8 +58,14 @@ namespace Taxjar.Tests
 			Assert.AreEqual(true, rates.FreightTaxable);
 			Assert.AreEqual("destination", rates.TaxSource);
 
-			// Breakdowns
-			Assert.AreEqual(1.5, rates.Breakdown.Shipping.TaxableAmount);
+            // Jurisdictions
+            Assert.AreEqual("US", rates.Jurisdictions.Country);
+            Assert.AreEqual("NJ", rates.Jurisdictions.State);
+            Assert.AreEqual("BERGEN", rates.Jurisdictions.County);
+            Assert.AreEqual("RAMSEY", rates.Jurisdictions.City);
+
+            // Breakdowns
+            Assert.AreEqual(1.5, rates.Breakdown.Shipping.TaxableAmount);
 			Assert.AreEqual(0.11, rates.Breakdown.Shipping.TaxCollectable);
 			Assert.AreEqual(0.07, rates.Breakdown.Shipping.CombinedTaxRate);
 			Assert.AreEqual(1.5, rates.Breakdown.Shipping.StateTaxableAmount);
@@ -148,8 +154,11 @@ namespace Taxjar.Tests
 			Assert.AreEqual(true, rates.FreightTaxable);
 			Assert.AreEqual("destination", rates.TaxSource);
 
-			// Breakdowns
-			Assert.AreEqual(26.95, rates.Breakdown.TaxableAmount);
+            // Jurisdictions
+            Assert.AreEqual("FI", rates.Jurisdictions.Country);
+
+            // Breakdowns
+            Assert.AreEqual(26.95, rates.Breakdown.TaxableAmount);
 			Assert.AreEqual(6.47, rates.Breakdown.TaxCollectable);
 			Assert.AreEqual(0.24, rates.Breakdown.CombinedTaxRate);
 			Assert.AreEqual(26.95, rates.Breakdown.CountryTaxableAmount);
@@ -215,8 +224,12 @@ namespace Taxjar.Tests
 			Assert.AreEqual(true, rates.FreightTaxable);
 			Assert.AreEqual("destination", rates.TaxSource);
 
-			// Breakdowns
-			Assert.AreEqual(26.95, rates.Breakdown.TaxableAmount);
+            // Jurisdictions
+            Assert.AreEqual("CA", rates.Jurisdictions.Country);
+            Assert.AreEqual("ON", rates.Jurisdictions.State);
+
+            // Breakdowns
+            Assert.AreEqual(26.95, rates.Breakdown.TaxableAmount);
 			Assert.AreEqual(3.5, rates.Breakdown.TaxCollectable);
 			Assert.AreEqual(0.13, rates.Breakdown.CombinedTaxRate);
 			Assert.AreEqual(26.95, rates.Breakdown.GSTTaxableAmount);
