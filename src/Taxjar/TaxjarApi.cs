@@ -21,12 +21,14 @@ namespace Taxjar
         public string apiKey { get; set; }
         public string apiUrl { get; set; }
         public IDictionary<string, string> headers { get; set; }
+        public int timeout { get; set; }
 
         public TaxjarApi(string apiKey, object parameters = null)
         {
             this.apiKey = apiKey;
             this.apiUrl = TaxjarConstants.DefaultApiUrl + "/" + TaxjarConstants.ApiVersion + "/";
             this.headers = new Dictionary<string, string>();
+            this.timeout = 0; // Seconds
 
             if (parameters != null)
             {
@@ -39,6 +41,11 @@ namespace Taxjar
                 if (parameters.GetType().GetProperty("headers") != null)
                 {
                     this.headers = (IDictionary<string, string>) parameters.GetType().GetProperty("headers").GetValue(parameters);
+                }
+
+                if (parameters.GetType().GetProperty("timeout") != null)
+                {
+                    this.timeout = (int) parameters.GetType().GetProperty("timeout").GetValue(parameters);
                 }
             }
 
@@ -78,6 +85,8 @@ namespace Taxjar
             {
                 request.AddHeader(header.Key, header.Value);
             }
+
+            request.Timeout = this.timeout * 1000;
 
             return request;
         }
@@ -123,6 +132,11 @@ namespace Taxjar
                 var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(res.Content);
                 var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
                 throw new TaxjarException(res.StatusCode, taxjarError, errorMessage);                
+            }
+
+            if (res.ErrorException != null)
+            {
+                throw new Exception(res.ErrorMessage, res.ErrorException);
             }
 
             return res.Content;
