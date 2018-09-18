@@ -298,6 +298,20 @@ var validation = client.Validate(new {
 var summaryRates = client.SummaryRates();
 ```
 
+## Custom Options
+
+You can pass additional options using `SetApiConfig` or when instantiating the client for the following:
+
+### Timeouts
+
+```csharp
+// Custom timeout when instantiating the client
+var client = new TaxjarApi("[Your TaxJar API Key]", new { apiUrl = "https://api.taxjar.com", timeout = 30 });
+
+// Custom timeout via `SetApiConfig`
+client.SetApiConfig("timeout", 30);
+```
+
 ## Sandbox Environment
 
 You can easily configure the client to use the [TaxJar Sandbox](https://developers.taxjar.com/api/reference/#sandbox-environment):
