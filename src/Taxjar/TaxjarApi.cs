@@ -18,43 +18,43 @@ namespace Taxjar
     public class TaxjarApi
     {
         internal RestClient apiClient;
-        public string apiKey { get; set; }
+        public string apiToken { get; set; }
         public string apiUrl { get; set; }
         public IDictionary<string, string> headers { get; set; }
         public int timeout { get; set; }
 
-        public TaxjarApi(string apiKey, object parameters = null)
+        public TaxjarApi(string token, object parameters = null)
         {
-            this.apiKey = apiKey;
-            this.apiUrl = TaxjarConstants.DefaultApiUrl + "/" + TaxjarConstants.ApiVersion + "/";
-            this.headers = new Dictionary<string, string>();
-            this.timeout = 0; // Seconds
+            apiToken = token;
+            apiUrl = TaxjarConstants.DefaultApiUrl + "/" + TaxjarConstants.ApiVersion + "/";
+            headers = new Dictionary<string, string>();
+            timeout = 0; // Milliseconds
 
             if (parameters != null)
             {
                 if (parameters.GetType().GetProperty("apiUrl") != null)
                 {
-                    this.apiUrl = parameters.GetType().GetProperty("apiUrl").GetValue(parameters).ToString();
-                    this.apiUrl += "/" + TaxjarConstants.ApiVersion + "/";
+                    apiUrl = parameters.GetType().GetProperty("apiUrl").GetValue(parameters).ToString();
+                    apiUrl += "/" + TaxjarConstants.ApiVersion + "/";
                 }
 
                 if (parameters.GetType().GetProperty("headers") != null)
                 {
-                    this.headers = (IDictionary<string, string>) parameters.GetType().GetProperty("headers").GetValue(parameters);
+                    headers = (IDictionary<string, string>) parameters.GetType().GetProperty("headers").GetValue(parameters);
                 }
 
                 if (parameters.GetType().GetProperty("timeout") != null)
                 {
-                    this.timeout = (int) parameters.GetType().GetProperty("timeout").GetValue(parameters);
+                    timeout = (int) parameters.GetType().GetProperty("timeout").GetValue(parameters);
                 }
             }
 
-            if (string.IsNullOrWhiteSpace(this.apiKey))
+            if (string.IsNullOrWhiteSpace(apiToken))
             {
-                throw new ArgumentException("Please provide a TaxJar API key.", nameof(this.apiKey));
+                throw new ArgumentException("Please provide a TaxJar API key.", nameof(apiToken));
             }
 
-            this.apiClient = new RestClient(this.apiUrl);
+            apiClient = new RestClient(apiUrl);
         }
 
         public virtual void SetApiConfig(string key, object value)
@@ -64,24 +64,24 @@ namespace Taxjar
                 value += "/" + TaxjarConstants.ApiVersion + "/";
             }
 
-            this.GetType().GetProperty(key).SetValue(this, value, null);
+            GetType().GetProperty(key).SetValue(this, value, null);
         }
 
         public virtual object GetApiConfig(string key)
         {
-            return this.GetType().GetProperty(key).GetValue(this);
+            return GetType().GetProperty(key).GetValue(this);
         }
 
         protected virtual IRestRequest CreateRequest(string action, Method method = Method.POST)
         {
             var request = new RestRequest(action, method)
             {
-                RequestFormat = DataFormat.Json
+                RequestFormat = DataFormat.Json 
             };
 
-            request.AddHeader("Authorization", "Bearer " + this.apiKey);
+            request.AddHeader("Authorization", "Bearer " + apiToken);
 
-            foreach (var header in this.headers)
+            foreach (var header in headers)
             {
                 request.AddHeader(header.Key, header.Value);
             }
