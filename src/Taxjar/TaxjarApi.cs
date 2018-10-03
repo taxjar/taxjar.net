@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
@@ -72,7 +73,7 @@ namespace Taxjar
             return GetType().GetProperty(key).GetValue(this);
         }
 
-        protected virtual IRestRequest CreateRequest(string action, Method method = Method.POST)
+        protected virtual RestRequest CreateRequest(string action, Method method = Method.POST, object body = null)
         {
             var request = new RestRequest(action, method)
             {
@@ -86,60 +87,79 @@ namespace Taxjar
                 request.AddHeader(header.Key, header.Value);
             }
 
-            request.Timeout = this.timeout * 1000;
-
-            return request;
-        }
-
-        protected virtual string SendRequest(string endpoint, object body = null, Method httpMethod = Method.POST)
-        {
-            var req = CreateRequest(endpoint, httpMethod);
+            request.Timeout = timeout;
 
             if (body != null)
             {
                 if (IsAnonymousType(body.GetType()))
                 {
-                    req.AddJsonBody(body);
+                    request.AddJsonBody(body);
 
-                    if (httpMethod == Method.GET)
+                    if (method == Method.GET)
                     {
                         foreach (var prop in body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
                         {
-                            req.AddQueryParameter(prop.Name, prop.GetValue(body).ToString());
+                            request.AddQueryParameter(prop.Name, prop.GetValue(body).ToString());
                         }
                     }
                 }
                 else
                 {
-                    req.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
+                    request.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
 
-                    if (httpMethod == Method.GET)
+                    if (method == Method.GET)
                     {
                         body = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(body));
 
                         foreach (var prop in JObject.FromObject(body).Properties())
                         {
-                            req.AddQueryParameter(prop.Name, prop.Value.ToString());
-                        }    
+                            request.AddQueryParameter(prop.Name, prop.Value.ToString());
+                        }
                     }
-                }   
+                }
             }
 
-            var res = this.apiClient.Execute(req);
+            return request;
+        }
 
-            if ((int) res.StatusCode >= 400)
+        protected virtual T SendRequest<T>(string endpoint, object body = null, Method httpMethod = Method.POST) where T : new()
+        {
+            var request = CreateRequest(endpoint, httpMethod, body);
+            var response = apiClient.Execute<T>(request);
+
+            if ((int)response.StatusCode >= 400)
             {
-                var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(res.Content);
+                var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(response.Content);
                 var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
-                throw new TaxjarException(res.StatusCode, taxjarError, errorMessage);                
+                throw new TaxjarException(response.StatusCode, taxjarError, errorMessage);
             }
 
-            if (res.ErrorException != null)
+            if (response.ErrorException != null)
             {
-                throw new Exception(res.ErrorMessage, res.ErrorException);
+                throw new Exception(response.ErrorMessage, response.ErrorException);
             }
 
-            return res.Content;
+            return response.Data;
+        }
+
+        protected virtual async Task<T> SendRequestAsync<T>(string endpoint, object body = null, Method httpMethod = Method.POST) where T : new()
+        {
+            var request = CreateRequest(endpoint, httpMethod, body);
+            var response = await apiClient.ExecuteTaskAsync<T>(request);
+
+            if ((int)response.StatusCode >= 400)
+            {
+                var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(response.Content);
+                var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
+                throw new TaxjarException(response.StatusCode, taxjarError, errorMessage);
+            }
+
+            if (response.ErrorException != null)
+            {
+                throw new Exception(response.ErrorMessage, response.ErrorException);
+            }
+
+            return response.Data;
         }
 
         protected virtual bool IsAnonymousType(Type type)
@@ -157,152 +177,178 @@ namespace Taxjar
 
         public virtual List<Category> Categories()
         {
-            var res = SendRequest("categories", null, Method.GET);
-            var categoryRequest = JsonConvert.DeserializeObject<CategoriesResponse>(res);
-            return categoryRequest.Categories;
+            var response = SendRequest<CategoriesResponse>("categories", null, Method.GET);
+            return response.Categories;
+        }
+
+        public virtual async Task<CategoriesResponse> CategoriesAsync()
+        {
+            return await SendRequestAsync<CategoriesResponse>("categories", null, Method.GET);
         }
 
         public virtual RateResponseAttributes RatesForLocation(string zip, object parameters = null)
         {
-            var res = SendRequest("rates/" + zip, parameters, Method.GET);
-            var rateRequest = JsonConvert.DeserializeObject<RateResponse>(res);
-            return rateRequest.Rate;
+            var response = SendRequest<RateResponse>("rates/" + zip, parameters, Method.GET);
+            return response.Rate;
+        }
+
+        public virtual async Task<RateResponse> RatesForLocationAsync(string zip, object parameters = null)
+        {
+            return await SendRequestAsync<RateResponse>("rates/" + zip, parameters, Method.GET);
         }
 
         public virtual TaxResponseAttributes TaxForOrder(object parameters)
         {
-            var res = SendRequest("taxes", parameters, Method.POST);
-            var taxRequest = JsonConvert.DeserializeObject<TaxResponse>(res);
-            return taxRequest.Tax;
+            var response = SendRequest<TaxResponse>("taxes", parameters, Method.POST);
+            return response.Tax;
+        }
+
+        public virtual async Task<TaxResponse> TaxForOrderAsync(object parameters)
+        {
+            return await SendRequestAsync<TaxResponse>("taxes", parameters, Method.POST);
         }
 
         public virtual List<String> ListOrders(object parameters = null)
         {
-            var res = SendRequest("transactions/orders", parameters, Method.GET);
-            var ordersRequest = JsonConvert.DeserializeObject<OrdersResponse>(res);
-            return ordersRequest.Orders;
+            var response = SendRequest<OrdersResponse>("transactions/orders", parameters, Method.GET);
+            return response.Orders;
+        }
+
+        public virtual List<String> ListOrdersAsync(object parameters = null)
+        {
+            var response = SendRequest<OrdersResponse>("transactions/orders", parameters, Method.GET);
+            return response.Orders;
         }
 
         public virtual OrderResponseAttributes ShowOrder(string transactionId)
         {
-            var res = SendRequest("transactions/orders/" + transactionId, null, Method.GET);
-            var orderRequest = JsonConvert.DeserializeObject<OrderResponse>(res);
-            return orderRequest.Order;
+            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, null, Method.GET);
+            return response.Order;
         }
 
         public virtual OrderResponseAttributes CreateOrder(object parameters)
         {
-            var res = SendRequest("transactions/orders", parameters, Method.POST);
-            var orderRequest = JsonConvert.DeserializeObject<OrderResponse>(res);
-            return orderRequest.Order;
+            var response = SendRequest<OrderResponse>("transactions/orders", parameters, Method.POST);
+            return response.Order;
         }
 
         public virtual OrderResponseAttributes UpdateOrder(object parameters)
         {
             var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
-            var res = SendRequest("transactions/orders/" + transactionId, parameters, Method.PUT);
-            var orderRequest = JsonConvert.DeserializeObject<OrderResponse>(res);
-            return orderRequest.Order;
+            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.PUT);
+            return response.Order;
         }
 
         public virtual OrderResponseAttributes DeleteOrder(string transactionId)
         {
-            var res = SendRequest("transactions/orders/" + transactionId, null, Method.DELETE);
-            var orderRequest = JsonConvert.DeserializeObject<OrderResponse>(res);
-            return orderRequest.Order;
+            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, null, Method.DELETE);
+            return response.Order;
         }
 
         public virtual List<String> ListRefunds(object parameters)
         {
-            var res = SendRequest("transactions/refunds", parameters, Method.GET);
-            var refundsRequest = JsonConvert.DeserializeObject<RefundsResponse>(res);
-            return refundsRequest.Refunds;
+            var response = SendRequest<RefundsResponse>("transactions/refunds", parameters, Method.GET);
+            return response.Refunds;
         }
 
         public virtual RefundResponseAttributes ShowRefund(string transactionId)
         {
-            var res = SendRequest("transactions/refunds/" + transactionId, null, Method.GET);
-            var refundRequest = JsonConvert.DeserializeObject<RefundResponse>(res);
-            return refundRequest.Refund;
+            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, null, Method.GET);
+            return response.Refund;
         }
 
         public virtual RefundResponseAttributes CreateRefund(object parameters)
         {
-            var res = SendRequest("transactions/refunds", parameters, Method.POST);
-            var refundRequest = JsonConvert.DeserializeObject<RefundResponse>(res);
-            return refundRequest.Refund;
+            var response = SendRequest<RefundResponse>("transactions/refunds", parameters, Method.POST);
+            return response.Refund;
         }
 
         public virtual RefundResponseAttributes UpdateRefund(object parameters)
         {
             var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
-            var res = SendRequest("transactions/refunds/" + transactionId, parameters, Method.PUT);
-            var refundRequest = JsonConvert.DeserializeObject<RefundResponse>(res);
-            return refundRequest.Refund;
+            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.PUT);
+            return response.Refund;
         }
 
         public virtual RefundResponseAttributes DeleteRefund(string transactionId)
         {
-            var res = SendRequest("transactions/refunds/" + transactionId, null, Method.DELETE);
-            var refundRequest = JsonConvert.DeserializeObject<RefundResponse>(res);
-            return refundRequest.Refund;
+            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, null, Method.DELETE);
+            return response.Refund;
         }
 
         public virtual List<String> ListCustomers(object parameters = null)
         {
-            var res = SendRequest("customers", parameters, Method.GET);
-            var customersRequest = JsonConvert.DeserializeObject<CustomersResponse>(res);
-            return customersRequest.Customers;
+            var response = SendRequest<CustomersResponse>("customers", parameters, Method.GET);
+            return response.Customers;
         }
 
         public virtual CustomerResponseAttributes ShowCustomer(string customerId)
         {
-            var res = SendRequest("customers/" + customerId, null, Method.GET);
-            var customerRequest = JsonConvert.DeserializeObject<CustomerResponse>(res);
-            return customerRequest.Customer;
+            var response = SendRequest<CustomerResponse>("customers/" + customerId, null, Method.GET);
+            return response.Customer;
         }
 
         public virtual CustomerResponseAttributes CreateCustomer(object parameters)
         {
-            var res = SendRequest("customers", parameters, Method.POST);
-            var customerRequest = JsonConvert.DeserializeObject<CustomerResponse>(res);
-            return customerRequest.Customer;
+            var response = SendRequest<CustomerResponse>("customers", parameters, Method.POST);
+            return response.Customer;
         }
 
         public virtual CustomerResponseAttributes UpdateCustomer(object parameters)
         {
             var customerId = parameters.GetType().GetProperty("customer_id").GetValue(parameters).ToString();
-            var res = SendRequest("customers/" + customerId, parameters, Method.PUT);
-            var customerRequest = JsonConvert.DeserializeObject<CustomerResponse>(res);
-            return customerRequest.Customer;
+            var response = SendRequest<CustomerResponse>("customers/" + customerId, parameters, Method.PUT);
+            return response.Customer;
+        }
+
+        public virtual async Task<CustomerResponse> UpdateCustomerAsync(object parameters)
+        {
+            var customerId = parameters.GetType().GetProperty("customer_id").GetValue(parameters).ToString();
+            return await SendRequestAsync<CustomerResponse>("customers/" + customerId, parameters, Method.PUT);
         }
 
         public virtual CustomerResponseAttributes DeleteCustomer(string customerId)
         {
-            var res = SendRequest("customers/" + customerId, null, Method.DELETE);
-            var customerRequest = JsonConvert.DeserializeObject<CustomerResponse>(res);
-            return customerRequest.Customer;
+            var response = SendRequest<CustomerResponse>("customers/" + customerId, null, Method.DELETE);
+            return response.Customer;
+        }
+
+        public virtual async Task<CustomerResponse> DeleteCustomerAsync(string customerId)
+        {
+            return await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.DELETE);
         }
 
         public virtual List<NexusRegion> NexusRegions()
         {
-            var res = SendRequest("nexus/regions", null, Method.GET);
-            var nexusRegionsRequest = JsonConvert.DeserializeObject<NexusRegionsResponse>(res);
-            return nexusRegionsRequest.Regions;
+            var response = SendRequest<NexusRegionsResponse>("nexus/regions", null, Method.GET);
+            return response.Regions;
+        }
+
+        public virtual async Task<NexusRegionsResponse> NexusRegionsAsync()
+        {
+            return await SendRequestAsync<NexusRegionsResponse>("nexus/regions", null, Method.GET);
         }
 
         public virtual ValidationResponseAttributes Validate(object parameters)
         {
-            var res = SendRequest("validation", parameters, Method.GET);
-            var validationRequest = JsonConvert.DeserializeObject<ValidationResponse>(res);
-            return validationRequest.Validation;
+            var response = SendRequest<ValidationResponse>("validation", parameters, Method.GET);
+            return response.Validation;
+        }
+
+        public virtual async Task<ValidationResponse> ValidateAsync(object parameters)
+        {
+            return await SendRequestAsync<ValidationResponse>("validation", parameters, Method.GET);
         }
 
         public virtual List<SummaryRate> SummaryRates()
         {
-            var res = SendRequest("summary_rates", null, Method.GET);
-            var summaryRatesRequest = JsonConvert.DeserializeObject<SummaryRatesResponse>(res);
-            return summaryRatesRequest.SummaryRates;
+            var response = SendRequestAsync<SummaryRatesResponse>("summary_rates", null, Method.GET);
+            return response.Result.SummaryRates;
+        }
+
+        public virtual async Task<SummaryRatesResponse> SummaryRatesAsync()
+        {
+            return await SendRequestAsync<SummaryRatesResponse>("summary_rates", null, Method.GET);
         }
     }
 }
