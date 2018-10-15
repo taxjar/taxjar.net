@@ -27,6 +27,7 @@ namespace Taxjar.Tests
             ).RespondWith(
                 Response.Create()
                     .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
                     .WithBodyAsJson(body)
             );
 
@@ -128,6 +129,7 @@ namespace Taxjar.Tests
             ).RespondWith(
                 Response.Create()
                     .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
                     .WithBodyAsJson(body)
             );
 
@@ -193,6 +195,7 @@ namespace Taxjar.Tests
             ).RespondWith(
                 Response.Create()
                     .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
                     .WithBodyAsJson(body)
             );
 
