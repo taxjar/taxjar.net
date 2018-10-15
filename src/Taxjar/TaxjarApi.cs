@@ -182,20 +182,10 @@ namespace Taxjar
             return response.Categories;
         }
 
-        public virtual async Task<CategoriesResponse> CategoriesAsync()
-        {
-            return await SendRequestAsync<CategoriesResponse>("categories", null, Method.GET);
-        }
-
         public virtual RateResponseAttributes RatesForLocation(string zip, object parameters = null)
         {
             var response = SendRequest<RateResponse>("rates/" + zip, parameters, Method.GET);
             return response.Rate;
-        }
-
-        public virtual async Task<RateResponse> RatesForLocationAsync(string zip, object parameters = null)
-        {
-            return await SendRequestAsync<RateResponse>("rates/" + zip, parameters, Method.GET);
         }
 
         public virtual TaxResponseAttributes TaxForOrder(object parameters)
@@ -204,18 +194,7 @@ namespace Taxjar
             return response.Tax;
         }
 
-        public virtual async Task<TaxResponse> TaxForOrderAsync(object parameters)
-        {
-            return await SendRequestAsync<TaxResponse>("taxes", parameters, Method.POST);
-        }
-
         public virtual List<String> ListOrders(object parameters = null)
-        {
-            var response = SendRequest<OrdersResponse>("transactions/orders", parameters, Method.GET);
-            return response.Orders;
-        }
-
-        public virtual List<String> ListOrdersAsync(object parameters = null)
         {
             var response = SendRequest<OrdersResponse>("transactions/orders", parameters, Method.GET);
             return response.Orders;
@@ -302,21 +281,10 @@ namespace Taxjar
             return response.Customer;
         }
 
-        public virtual async Task<CustomerResponse> UpdateCustomerAsync(object parameters)
-        {
-            var customerId = parameters.GetType().GetProperty("customer_id").GetValue(parameters).ToString();
-            return await SendRequestAsync<CustomerResponse>("customers/" + customerId, parameters, Method.PUT);
-        }
-
         public virtual CustomerResponseAttributes DeleteCustomer(string customerId)
         {
             var response = SendRequest<CustomerResponse>("customers/" + customerId, null, Method.DELETE);
             return response.Customer;
-        }
-
-        public virtual async Task<CustomerResponse> DeleteCustomerAsync(string customerId)
-        {
-            return await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.DELETE);
         }
 
         public virtual List<NexusRegion> NexusRegions()
@@ -325,26 +293,119 @@ namespace Taxjar
             return response.Regions;
         }
 
-        public virtual async Task<NexusRegionsResponse> NexusRegionsAsync()
-        {
-            return await SendRequestAsync<NexusRegionsResponse>("nexus/regions", null, Method.GET);
-        }
-
         public virtual ValidationResponseAttributes Validate(object parameters)
         {
             var response = SendRequest<ValidationResponse>("validation", parameters, Method.GET);
             return response.Validation;
         }
 
+        public virtual List<SummaryRate> SummaryRates()
+        {
+            var response = SendRequest<SummaryRatesResponse>("summary_rates", null, Method.GET);
+            return response.SummaryRates;
+        }
+
+        public virtual async Task<CategoriesResponse> CategoriesAsync()
+        {
+            return await SendRequestAsync<CategoriesResponse>("categories", null, Method.GET);
+        }
+
+        public virtual async Task<RateResponse> RatesForLocationAsync(string zip, object parameters = null)
+        {
+            return await SendRequestAsync<RateResponse>("rates/" + zip, parameters, Method.GET);
+        }
+
+        public virtual async Task<TaxResponse> TaxForOrderAsync(object parameters)
+        {
+            return await SendRequestAsync<TaxResponse>("taxes", parameters, Method.POST);
+        }
+
+        public virtual async Task<OrdersResponse> ListOrdersAsync(object parameters = null)
+        {
+            return await SendRequestAsync<OrdersResponse>("transactions/orders", parameters, Method.GET);
+        }
+
+        public virtual async Task<OrderResponse> ShowOrderAsync(string transactionId)
+        {
+            return await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, null, Method.GET);
+        }
+
+        public virtual async Task<OrderResponse> CreateOrderAsync(object parameters)
+        {
+            return await SendRequestAsync<OrderResponse> ("transactions/orders", parameters, Method.POST);
+        }
+
+        public virtual async Task<OrderResponse> UpdateOrderAsync(object parameters)
+        {
+            var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
+            return await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.PUT);
+        }
+
+        public virtual async Task<OrderResponse> DeleteOrderAsync(string transactionId)
+        {
+            return await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, null, Method.DELETE);
+        }
+
+        public virtual async Task<RefundsResponse> ListRefundsAsync(object parameters)
+        {
+            return await SendRequestAsync<RefundsResponse>("transactions/refunds", parameters, Method.GET);
+        }
+
+        public virtual async Task<RefundResponse> ShowRefundAsync(string transactionId)
+        {
+            return await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, null, Method.GET);
+        }
+
+        public virtual async Task<RefundResponse> CreateRefundAsync(object parameters)
+        {
+            return await SendRequestAsync<RefundResponse>("transactions/refunds", parameters, Method.POST);
+        }
+
+        public virtual async Task<RefundResponse> UpdateRefundAsync(object parameters)
+        {
+            var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
+            return await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.PUT);
+        }
+
+        public virtual async Task<RefundResponse> DeleteRefundAsync(string transactionId)
+        {
+            return await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, null, Method.DELETE);
+        }
+
+        public virtual async Task<CustomersResponse> ListCustomersAsync(object parameters = null)
+        {
+            return await SendRequestAsync<CustomersResponse>("customers", parameters, Method.GET);
+        }
+
+        public virtual async Task<CustomerResponse> ShowCustomerAsync(string customerId)
+        {
+            return await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.GET);
+        }
+
+        public virtual async Task<CustomerResponse> CreateCustomerAsync(object parameters)
+        {
+            return await SendRequestAsync<CustomerResponse>("customers", parameters, Method.POST);
+        }
+
+        public virtual async Task<CustomerResponse> UpdateCustomerAsync(object parameters)
+        {
+            var customerId = parameters.GetType().GetProperty("customer_id").GetValue(parameters).ToString();
+            return await SendRequestAsync<CustomerResponse>("customers/" + customerId, parameters, Method.PUT);
+        }
+
+        public virtual async Task<CustomerResponse> DeleteCustomerAsync(string customerId)
+        {
+            return await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.DELETE);
+        }
+
+        public virtual async Task<NexusRegionsResponse> NexusRegionsAsync()
+        {
+            return await SendRequestAsync<NexusRegionsResponse>("nexus/regions", null, Method.GET);
+        }
+
         public virtual async Task<ValidationResponse> ValidateAsync(object parameters)
         {
             return await SendRequestAsync<ValidationResponse>("validation", parameters, Method.GET);
-        }
-
-        public virtual List<SummaryRate> SummaryRates()
-        {
-            var response = SendRequestAsync<SummaryRatesResponse>("summary_rates", null, Method.GET);
-            return response.Result.SummaryRates;
         }
 
         public virtual async Task<SummaryRatesResponse> SummaryRatesAsync()
