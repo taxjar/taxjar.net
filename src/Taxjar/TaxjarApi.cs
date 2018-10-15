@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using RestRequest = RestSharp.RestRequest;
 
 namespace Taxjar
 {
