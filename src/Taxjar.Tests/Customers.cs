@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using NUnit.Framework;
 using System.Net;
+using System.Threading.Tasks;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 
@@ -55,7 +56,30 @@ namespace Taxjar.Tests
         }
 
         [Test]
-        public void when_showing_an_order_transaction()
+        public async Task when_listing_customers_async()
+        {
+            var body = JsonConvert.DeserializeObject<CustomersResponse>(TaxjarFixture.GetJSON("customers/list.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/customers")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+            var customersRequest = await Bootstrap.client.ListCustomersAsync();
+            var customers = customersRequest.Customers;
+
+            Assert.AreEqual("123", customers[0]);
+            Assert.AreEqual("456", customers[1]);
+        }
+
+        [Test]
+        public void when_showing_a_customer()
         {
             var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
 
@@ -71,6 +95,27 @@ namespace Taxjar.Tests
             );
 
             var customer = Bootstrap.client.ShowCustomer("123");
+            AssertCustomer(customer);
+        }
+
+        [Test]
+        public async Task when_showing_a_customer_async()
+        {
+            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/customers/123")
+                    .UsingGet()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+            var customerRequest = await Bootstrap.client.ShowCustomerAsync("123");
+            var customer = customerRequest.Customer;
             AssertCustomer(customer);
         }
 
@@ -116,6 +161,49 @@ namespace Taxjar.Tests
         }
 
         [Test]
+        public async Task when_creating_a_customer_async()
+        {
+            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/customers")
+                    .UsingPost()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(HttpStatusCode.Created)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+            var customerRequest = await Bootstrap.client.CreateCustomerAsync(new
+            {
+                customer_id = "123",
+                exemption_type = "wholesale",
+                name = "Dunder Mifflin Paper Company",
+                exempt_regions = new[] {
+                    new {
+                      country = "US",
+                      state = "FL"
+                    },
+                    new {
+                      country = "US",
+                      state = "PA"
+                    }
+                },
+                country = "US",
+                state = "PA",
+                zip = "18504",
+                city = "Scranton",
+                street = "1725 Slough Avenue"
+            });
+
+            var customer = customerRequest.Customer;
+
+            AssertCustomer(customer);
+        }
+
+        [Test]
         public void when_updating_a_customer()
         {
             var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
@@ -153,6 +241,45 @@ namespace Taxjar.Tests
         }
 
         [Test]
+        public async Task when_updating_a_customer_async()
+        {
+            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/customers/123")
+                    .UsingPut()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+            var customerRequest = await Bootstrap.client.UpdateCustomerAsync(new
+            {
+                customer_id = "123",
+                exemption_type = "wholesale",
+                name = "Sterling Cooper",
+                exempt_regions = new[] {
+                    new {
+                      country = "US",
+                      state = "NY"
+                    }
+                },
+                country = "US",
+                state = "NY",
+                zip = "10010",
+                city = "New York",
+                street = "405 Madison Ave"
+            });
+
+            var customer = customerRequest.Customer;
+
+            AssertCustomer(customer);
+        }
+
+        [Test]
         public void when_deleting_a_customer()
         {
             var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
@@ -169,6 +296,27 @@ namespace Taxjar.Tests
             );
 
             var customer = Bootstrap.client.DeleteCustomer("123");
+            AssertCustomer(customer);
+        }
+
+        [Test]
+        public async Task when_deleting_a_customer_async()
+        {
+            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/customers/123")
+                    .UsingDelete()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+            var customerRequest = await Bootstrap.client.DeleteCustomerAsync("123");
+            var customer = customerRequest.Customer;
             AssertCustomer(customer);
         }
     }
