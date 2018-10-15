@@ -6,7 +6,7 @@ namespace Taxjar
     public class RefundsResponse
     {
         [JsonProperty("refunds")]
-        public List<String> Refunds { get; set; }
+        public List<string> Refunds { get; set; }
     }
 
     public class RefundResponse
