@@ -295,12 +295,11 @@ namespace Taxjar
 
         public virtual List<Address> ValidateAddress(object parameters)
         {
-            var res = SendRequest("addresses/validate", parameters, Method.POST);
-            var addressValidationRequest = JsonConvert.DeserializeObject<AddressValidationResponse>(res);
-            return addressValidationRequest.Addresses;
+            var response = SendRequest<AddressValidationResponse>("addresses/validate", parameters, Method.POST);
+            return response.Addresses;
         }
 
-        public virtual ValidationResponseAttributes Validate(object parameters)
+        public virtual ValidationResponseAttributes ValidateVat(object parameters)
         {
             var response = SendRequest<ValidationResponse>("validation", parameters, Method.GET);
             return response.Validation;
@@ -410,7 +409,12 @@ namespace Taxjar
             return await SendRequestAsync<NexusRegionsResponse>("nexus/regions", null, Method.GET);
         }
 
-        public virtual async Task<ValidationResponse> ValidateAsync(object parameters)
+        public virtual async Task<AddressValidationResponse> ValidateAddressAsync(object parameters)
+        {
+            return await SendRequestAsync<AddressValidationResponse>("addresses/validate", parameters, Method.POST);
+        }
+
+        public virtual async Task<ValidationResponse> ValidateVatAsync(object parameters)
         {
             return await SendRequestAsync<ValidationResponse>("validation", parameters, Method.GET);
         }

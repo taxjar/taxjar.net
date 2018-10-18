@@ -28,6 +28,7 @@ namespace Taxjar.Tests
             ).RespondWith(
                 Response.Create()
                     .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
                     .WithBodyAsJson(body)
             );
 
@@ -48,6 +49,40 @@ namespace Taxjar.Tests
         }
 
         [Test]
+        public async Task when_validating_an_address_async()
+        {
+            var body = JsonConvert.DeserializeObject<AddressValidationResponse>(TaxjarFixture.GetJSON("addresses.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/addresses/validate")
+                    .UsingPost()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+            var addressRequest = await Bootstrap.client.ValidateAddressAsync(new
+            {
+                country = "US",
+                state = "AZ",
+                zip = "85297",
+                city = "Gilbert",
+                street = "3301 South Greenfield Rd"
+            });
+
+            var addresses = addressRequest.Addresses;
+
+            Assert.AreEqual("85297-2176", addresses[0].Zip);
+            Assert.AreEqual("3301 S Greenfield Rd", addresses[0].Street);
+            Assert.AreEqual("AZ", addresses[0].State);
+            Assert.AreEqual("US", addresses[0].Country);
+            Assert.AreEqual("Gilbert", addresses[0].City);
+        }
+
+        [Test]
         public void when_validating_an_address_with_multiple_matches()
         {
             var body = JsonConvert.DeserializeObject<AddressValidationResponse>(TaxjarFixture.GetJSON("addresses_multiple.json"));
@@ -59,6 +94,7 @@ namespace Taxjar.Tests
             ).RespondWith(
                 Response.Create()
                     .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
                     .WithBodyAsJson(body)
             );
 
@@ -98,7 +134,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var validation = Bootstrap.client.Validate(new {
+            var validation = Bootstrap.client.ValidateVat(new {
 				vat = "FR40303265045"
 			});
 
@@ -129,7 +165,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var validationRequest = await Bootstrap.client.ValidateAsync(new
+            var validationRequest = await Bootstrap.client.ValidateVatAsync(new
             {
                 vat = "FR40303265045"
             });
