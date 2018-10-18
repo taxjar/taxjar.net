@@ -134,7 +134,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var ratesRequest = await Bootstrap.client.TaxForOrderAsync(new
+            var rates = await Bootstrap.client.TaxForOrderAsync(new
             {
                 from_country = "US",
                 from_zip = "07001",
@@ -153,8 +153,6 @@ namespace Taxjar.Tests
                     }
                 }
             });
-
-            var rates = ratesRequest.Tax;
 
             Assert.AreEqual(16.5, rates.OrderTotalAmount);
             Assert.AreEqual(1.5, rates.Shipping);

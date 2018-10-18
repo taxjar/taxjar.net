@@ -64,7 +64,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var addressRequest = await Bootstrap.client.ValidateAddressAsync(new
+            var addresses = await Bootstrap.client.ValidateAddressAsync(new
             {
                 country = "US",
                 state = "AZ",
@@ -72,8 +72,6 @@ namespace Taxjar.Tests
                 city = "Gilbert",
                 street = "3301 South Greenfield Rd"
             });
-
-            var addresses = addressRequest.Addresses;
 
             Assert.AreEqual("85297-2176", addresses[0].Zip);
             Assert.AreEqual("3301 S Greenfield Rd", addresses[0].Street);
@@ -165,12 +163,10 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var validationRequest = await Bootstrap.client.ValidateVatAsync(new
+            var validation = await Bootstrap.client.ValidateVatAsync(new
             {
                 vat = "FR40303265045"
             });
-
-            var validation = validationRequest.Validation;
 
             Assert.AreEqual(true, validation.Valid);
             Assert.AreEqual(true, validation.Exists);

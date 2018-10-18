@@ -50,8 +50,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var nexusRegionsRequest = await Bootstrap.client.NexusRegionsAsync();
-            var nexusRegions = nexusRegionsRequest.Regions;
+            var nexusRegions = await Bootstrap.client.NexusRegionsAsync();
 
             Assert.AreEqual(3, nexusRegions.Count);
             Assert.AreEqual("US", nexusRegions[0].CountryCode);

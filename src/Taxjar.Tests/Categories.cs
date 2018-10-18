@@ -49,8 +49,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var categoryRequest = await Bootstrap.client.CategoriesAsync();
-            var categories = categoryRequest.Categories;
+            var categories = await Bootstrap.client.CategoriesAsync();
 
             Assert.AreEqual(17, categories.Count);
             Assert.AreEqual("Clothing", categories[0].Name);

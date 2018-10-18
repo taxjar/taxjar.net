@@ -54,8 +54,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var summaryRatesRequest = await Bootstrap.client.SummaryRatesAsync();
-            var summaryRates = summaryRatesRequest.SummaryRates;
+            var summaryRates = await Bootstrap.client.SummaryRatesAsync();
 
             Assert.AreEqual(3, summaryRates.Count);
             Assert.AreEqual("US", summaryRates[0].CountryCode);

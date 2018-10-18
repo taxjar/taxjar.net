@@ -71,8 +71,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var customersRequest = await Bootstrap.client.ListCustomersAsync();
-            var customers = customersRequest.Customers;
+            var customers = await Bootstrap.client.ListCustomersAsync();
 
             Assert.AreEqual("123", customers[0]);
             Assert.AreEqual("456", customers[1]);
@@ -114,8 +113,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var customerRequest = await Bootstrap.client.ShowCustomerAsync("123");
-            var customer = customerRequest.Customer;
+            var customer = await Bootstrap.client.ShowCustomerAsync("123");
             AssertCustomer(customer);
         }
 
@@ -176,7 +174,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var customerRequest = await Bootstrap.client.CreateCustomerAsync(new
+            var customer = await Bootstrap.client.CreateCustomerAsync(new
             {
                 customer_id = "123",
                 exemption_type = "wholesale",
@@ -197,8 +195,6 @@ namespace Taxjar.Tests
                 city = "Scranton",
                 street = "1725 Slough Avenue"
             });
-
-            var customer = customerRequest.Customer;
 
             AssertCustomer(customer);
         }
@@ -256,7 +252,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var customerRequest = await Bootstrap.client.UpdateCustomerAsync(new
+            var customer = await Bootstrap.client.UpdateCustomerAsync(new
             {
                 customer_id = "123",
                 exemption_type = "wholesale",
@@ -273,8 +269,6 @@ namespace Taxjar.Tests
                 city = "New York",
                 street = "405 Madison Ave"
             });
-
-            var customer = customerRequest.Customer;
 
             AssertCustomer(customer);
         }
@@ -315,8 +309,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var customerRequest = await Bootstrap.client.DeleteCustomerAsync("123");
-            var customer = customerRequest.Customer;
+            var customer = await Bootstrap.client.DeleteCustomerAsync("123");
             AssertCustomer(customer);
         }
     }

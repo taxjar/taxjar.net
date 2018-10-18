@@ -123,13 +123,11 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var ordersRequest = await Bootstrap.client.ListOrdersAsync(new
+            var orders = await Bootstrap.client.ListOrdersAsync(new
             {
                 from_transaction_date = "2015/05/01",
                 to_transaction_date = "2015/05/31"
             });
-
-            var orders = ordersRequest.Orders;
 
             Assert.AreEqual("123", orders[0]);
             Assert.AreEqual("456", orders[1]);
@@ -171,8 +169,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var orderRequest = await Bootstrap.client.ShowOrderAsync("123");
-            var order = orderRequest.Order;
+            var order = await Bootstrap.client.ShowOrderAsync("123");
 
             AssertOrder(order);
         }
@@ -234,7 +231,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var orderRequest = await Bootstrap.client.CreateOrderAsync(new
+            var order = await Bootstrap.client.CreateOrderAsync(new
             {
                 transaction_id = "123",
                 transaction_date = "2015/05/04",
@@ -256,8 +253,6 @@ namespace Taxjar.Tests
                     }
                 }
             });
-
-            var order = orderRequest.Order;
 
             AssertOrder(order);
         }
@@ -315,7 +310,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var orderRequest = await Bootstrap.client.UpdateOrderAsync(new
+            var order = await Bootstrap.client.UpdateOrderAsync(new
             {
                 transaction_id = "123",
                 amount = 17.95,
@@ -332,8 +327,6 @@ namespace Taxjar.Tests
                     }
                 }
             });
-
-            var order = orderRequest.Order;
 
             AssertOrder(order);
         }
@@ -352,8 +345,7 @@ namespace Taxjar.Tests
         {
             Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
 
-            var orderRequest = await Bootstrap.client.DeleteOrderAsync("123");
-            var order = orderRequest.Order;
+            var order = await Bootstrap.client.DeleteOrderAsync("123");
             AssertDeletedOrder(order);
         }
 
@@ -399,13 +391,11 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var refundsRequest = await Bootstrap.client.ListRefundsAsync(new
+            var refunds = await Bootstrap.client.ListRefundsAsync(new
             {
                 from_transaction_date = "2015/05/01",
                 to_transaction_date = "2015/05/31"
             });
-
-            var refunds = refundsRequest.Refunds;
 
             Assert.AreEqual("321", refunds[0]);
             Assert.AreEqual("654", refunds[1]);
@@ -447,8 +437,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var refundRequest = await Bootstrap.client.ShowRefundAsync("321");
-            var refund = refundRequest.Refund;
+            var refund = await Bootstrap.client.ShowRefundAsync("321");
             AssertRefund(refund);
         }
 
@@ -511,7 +500,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var refundRequest = await Bootstrap.client.CreateRefundAsync(new
+            var refund = await Bootstrap.client.CreateRefundAsync(new
             {
                 transaction_id = "321",
                 transaction_date = "2015/05/04",
@@ -534,8 +523,6 @@ namespace Taxjar.Tests
                     }
                 }
             });
-
-            var refund = refundRequest.Refund;
 
             AssertRefund(refund);
         }
@@ -593,7 +580,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var refundRequest = await Bootstrap.client.UpdateRefundAsync(new
+            var refund = await Bootstrap.client.UpdateRefundAsync(new
             {
                 transaction_id = "321",
                 amount = 17.95,
@@ -610,8 +597,6 @@ namespace Taxjar.Tests
                     }
                 }
             });
-
-            var refund = refundRequest.Refund;
 
             AssertRefund(refund);
         }
@@ -630,8 +615,7 @@ namespace Taxjar.Tests
         {
             Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
 
-            var refundRequest = await Bootstrap.client.DeleteRefundAsync("321");
-            var refund = refundRequest.Refund;
+            var refund = await Bootstrap.client.DeleteRefundAsync("321");
             AssertDeletedRefund(refund);
         }
     }

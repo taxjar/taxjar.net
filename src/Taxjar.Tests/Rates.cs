@@ -55,8 +55,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var rateResponse = await Bootstrap.client.RatesForLocationAsync("90002");
-            var rates = rateResponse.Rate;
+            var rates = await Bootstrap.client.RatesForLocationAsync("90002");
 
             Assert.AreEqual("90002", rates.Zip);
             Assert.AreEqual("CA", rates.State);
