@@ -6,7 +6,8 @@
     <AssemblyName>TaxJar.Tests</AssemblyName>
     <IsPackable>false</IsPackable>
     <SignAssembly>true</SignAssembly>
-    <ReleaseVersion>2.2.0</ReleaseVersion>
+    <ReleaseVersion>2.2.1</ReleaseVersion>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

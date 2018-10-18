@@ -293,6 +293,13 @@ namespace Taxjar
             return response.Regions;
         }
 
+        public virtual List<Address> ValidateAddress(object parameters)
+        {
+            var res = SendRequest("addresses/validate", parameters, Method.POST);
+            var addressValidationRequest = JsonConvert.DeserializeObject<AddressValidationResponse>(res);
+            return addressValidationRequest.Addresses;
+        }
+
         public virtual ValidationResponseAttributes Validate(object parameters)
         {
             var response = SendRequest<ValidationResponse>("validation", parameters, Method.GET);
