@@ -494,10 +494,10 @@ You can pass additional options using `SetApiConfig` or when instantiating the c
 
 ```csharp
 // Custom timeout when instantiating the client
-var client = new TaxjarApi("[Your TaxJar API Key]", new { apiUrl = "https://api.taxjar.com", timeout = 30 });
+var client = new TaxjarApi("[Your TaxJar API Key]", new { apiUrl = "https://api.taxjar.com", timeout = 30000 });
 
 // Custom timeout via `SetApiConfig`
-client.SetApiConfig("timeout", 30);
+client.SetApiConfig("timeout", 30000);
 ```
 
 ## Sandbox Environment
