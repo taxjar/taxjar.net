@@ -200,7 +200,14 @@ namespace Taxjar
 
         public virtual OrderResponseAttributes UpdateOrder(object parameters)
         {
-            var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
+            var transactionIdProp = parameters.GetType().GetProperty("transaction_id") ?? parameters.GetType().GetProperty("TransactionId");
+
+            if (transactionIdProp == null)
+            {
+                throw new Exception("Missing transaction ID for `UpdateOrder`");
+            }
+
+            var transactionId = transactionIdProp.GetValue(parameters).ToString();
             var res = SendRequest("transactions/orders/" + transactionId, parameters, Method.PUT);
             var orderRequest = JsonConvert.DeserializeObject<OrderResponse>(res);
             return orderRequest.Order;
@@ -236,7 +243,13 @@ namespace Taxjar
 
         public virtual RefundResponseAttributes UpdateRefund(object parameters)
         {
-            var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
+            var transactionIdProp = parameters.GetType().GetProperty("transaction_id") ?? parameters.GetType().GetProperty("TransactionId");
+
+            if (transactionIdProp == null) {
+                throw new Exception("Missing transaction ID for `UpdateRefund`");
+            }
+
+            var transactionId = transactionIdProp.GetValue(parameters).ToString();
             var res = SendRequest("transactions/refunds/" + transactionId, parameters, Method.PUT);
             var refundRequest = JsonConvert.DeserializeObject<RefundResponse>(res);
             return refundRequest.Refund;
