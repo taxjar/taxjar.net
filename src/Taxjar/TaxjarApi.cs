@@ -285,7 +285,14 @@ namespace Taxjar
 
         public virtual CustomerResponseAttributes UpdateCustomer(object parameters)
         {
-            var customerId = parameters.GetType().GetProperty("customer_id").GetValue(parameters).ToString();
+            var customerIdProp = parameters.GetType().GetProperty("customer_id") ?? parameters.GetType().GetProperty("CustomerId");
+
+            if (customerIdProp == null)
+            {
+                throw new Exception("Missing customer ID for `UpdateCustomer`");
+            }
+
+            var customerId = customerIdProp.GetValue(parameters).ToString();
             var res = SendRequest("customers/" + customerId, parameters, Method.PUT);
             var customerRequest = JsonConvert.DeserializeObject<CustomerResponse>(res);
             return customerRequest.Customer;
