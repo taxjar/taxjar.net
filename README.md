@@ -62,6 +62,16 @@ var rates = client.RatesForLocation("90002", new {
 });
 ```
 
+### List tax rates for a location (by zip/postal code) using entity
+
+```csharp
+var rateEntity = new Rate {
+  City = "LOS ANGELES",
+  Country = "US"
+};
+var rates = client.RatesForLocation("90002",rateEntity);
+```
+
 ### Calculate sales tax for an order
 
 ```csharp
@@ -77,6 +87,23 @@ var rates = client.TaxForOrder(new {
 });
 ```
 
+### Calculate sales tax for an order using entity
+
+```csharp
+var taxEntity = new Tax
+{
+	FromCountry = "US",
+	FromZip = "07001",
+	FromState = "NJ",
+	ToCountry = "US",
+	ToZip = "07446",
+	ToState = "NJ",
+	Amount = 16.50M,
+	Shipping = 1.50M
+};
+var rates = client.TaxForOrder(taxEntity);
+```
+
 ### List order transactions
 
 ```csharp
@@ -84,6 +111,17 @@ var orders = client.ListOrders(new {
 	from_transaction_date = "2015/05/01",
 	to_transaction_date = "2015/05/31"
 });
+```
+
+### List order transactions using entity
+
+```csharp
+var orderFilter = new OrderFilter
+{
+	FromTransactionDate = "2015/05/01",
+	ToTransactionDate = "2015/05/31"
+};
+var orders = client.ListOrders(orderFilter);
 ```
 
 ### Show order transaction
@@ -117,6 +155,36 @@ var order = client.CreateOrder(new {
 });
 ```
 
+### Create order transaction with order entity
+
+```csharp
+var orderEntity = new Order
+{
+	TransactionId = "123",
+	TransactionDate = "2015/05/04",
+	ToState = "CA",
+	ToCountry = "US",
+	ToZip = "90002",
+	ToCity = "Los Angeles",
+	ToStreet = "123 Palm Grove Ln",
+	Amount = 17M,
+	Shipping = 2M,
+	SalesTax = 0.95M,
+	LineItems = new List<LineItem>
+	{
+		new LineItem
+		{
+	  		Quantity = 1,
+	  		ProductIdentifier = "12-34243-0",
+	 		Description = "Heavy Widget",
+	  		UnitPrice = 15M,
+	  		SalesTax = 0.95M
+		}
+	}
+};
+var order = client.CreateOrder(orderEntity);
+```
+
 ### Update order transaction
 
 ```csharp
@@ -138,6 +206,31 @@ var order = client.UpdateOrder(new
 });
 ```
 
+### Update order transaction with order entity
+
+```csharp
+orderEntity = new Order
+{
+	TransactionId = "123",
+	Amount = 17M,
+	Shipping = 2M,
+	LineItems = new List<LineItem>
+	{
+		new LineItem
+			{
+	  			Quantity = 1,
+	  			ProductIdentifier = "12-34243-0",
+	  			Description = "Heavy Widget",
+	  			UnitPrice = 15M,
+	  			Discount = 0M,
+	  			SalesTax = 0.95M
+			}
+  	}
+};
+var order = client.UpdateOrder(orderEntity);
+```
+
+
 ### Delete order transaction
 
 ```csharp
@@ -152,6 +245,16 @@ var refunds = client.ListRefunds(new
   from_transaction_date = "2015/05/01",
   to_transaction_date = "2015/05/31"
 });
+```
+### List refund transactions with entity
+
+```csharp
+var refundFilterEntity = new RefundFilter
+{
+	FromTransactionDate = "2015/05/01",
+	ToTransactionDate = "2015/05/31"
+};
+var refunds = client.ListRefunds(refundFilterEntity)
 ```
 
 ### Show refund transaction
@@ -186,6 +289,33 @@ var refund = client.CreateRefund(new
   }
 });
 ```
+### Create refund transaction
+
+```csharp
+var refundEntity = new Refund
+{
+  TransactionId = "321",
+  TransactionDate = "2015/05/04",
+  TransactionReferenceId = "123",
+  ToCountry = "US",
+  ToZip = "90002",
+  ToCity = "Los Angeles",
+  ToStreet = "123 Palm Grove Ln",
+  Amount = 17,
+  Shipping = 2M,
+  SalesTax = 0.95M,
+  LineItems = new List<LineItem> {
+    new LineItem{
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = 15M,
+      SalesTax = 0.95M
+    }
+  }
+};
+var refund = client.CreateRefund(refundEntity);
+```
 
 ### Update refund transaction
 
@@ -206,6 +336,27 @@ var refund = client.UpdateRefund(new
     }
   }
 });
+```
+### Update refund transaction
+
+```csharp
+var refundEntity = new Refund
+{
+  TransactionId = "321",
+  Amount = 17M,
+  Shipping = 2M,
+  LineItems = new List<LineItem>{
+    new LineItem{
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = 15M,
+      Discount = 0M,
+      SalesTax = 0.95M
+    }
+  }
+};
+var refund = client.UpdateRefund(refundEntity);
 ```
 
 ### Delete refund transaction
@@ -250,6 +401,35 @@ var customer = client.CreateCustomer(new {
   street = "1725 Slough Avenue"
 });
 ```
+### Create customer using entity
+
+```csharp
+var customerEntity = new Customer
+{
+	CustomerId = "123",
+	ExemptionType = "wholesale",
+	Name = "Dunder Mifflin Paper Company",
+	ExemptRegions = new List<ExemptRegion>
+	{
+		new ExemptRegion 
+		{
+	  		Country = "US",
+	  		State = "FL"
+		},
+		new ExemptRegion
+		{
+	  		Country = "US",
+	  		State = "PA"
+		}
+  	},
+	Country = "US",
+	State = "PA",
+	Zip = "18504",
+	City = "Scranton",
+	Street = "1725 Slough Avenue"
+};
+var customer = client.CreateCustomer(customerEntity);
+```
 
 ### Update customer
 
@@ -272,6 +452,28 @@ var customer = client.UpdateCustomer(new {
 });
 ```
 
+### Update customer using entity
+
+```csharp
+var customerEntity = new Customer {
+  CustomerId = "123",
+  ExemptionType = "wholesale",
+  Name = "Sterling Cooper",
+  ExemptRegions = new List<ExemptRegion>{
+    new ExemptRegion{
+      Country = "US",
+      State = "NY"
+    }
+  },
+  Country = "US",
+  State = "NY",
+  Zip = "10010",
+  City = "New York",
+  Street = "405 Madison Ave"
+};
+var customer = client.UpdateCustomer(customerEntity);
+```
+
 ### Delete customer
 
 ```csharp
@@ -291,6 +493,16 @@ var validation = client.Validate(new {
   vat = "FR40303265045"
 });
 ```
+### Validate a VAT number using entity
+
+```csharp
+var vatEntity = new Validation
+{
+  Vat = "FR40303265045"
+};
+var validation = client.Validate(vatEntity);
+```
+
 
 ### Summarize tax rates for all regions
 
