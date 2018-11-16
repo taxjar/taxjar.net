@@ -50,10 +50,10 @@ namespace Taxjar.Tests
         {
             Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new
             {
-                timeout = 30
+                timeout = 30 * 1000
             });
 
-            Assert.AreEqual(Bootstrap.client.GetApiConfig("timeout"), 30);
+            Assert.AreEqual(Bootstrap.client.GetApiConfig("timeout"), 30 * 1000);
         }
 
         [Test, Order(5)]
