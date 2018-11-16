@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using NUnit.Framework;
+using System.Threading.Tasks;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 
@@ -27,6 +28,7 @@ namespace Taxjar.Tests
             ).RespondWith(
                 Response.Create()
                     .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
                     .WithBodyAsJson(body)
             );
 
@@ -116,7 +118,110 @@ namespace Taxjar.Tests
 			Assert.AreEqual(0, rates.Breakdown.LineItems[0].SpecialDistrictAmount);
 		}
 
-		[Test]
+        [Test]
+        public async Task when_calculating_sales_tax_for_an_order_async()
+        {
+            var body = JsonConvert.DeserializeObject<TaxResponse>(TaxjarFixture.GetJSON("taxes.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/taxes")
+                    .UsingPost()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+            var rates = await Bootstrap.client.TaxForOrderAsync(new
+            {
+                from_country = "US",
+                from_zip = "07001",
+                from_state = "NJ",
+                to_country = "US",
+                to_zip = "07446",
+                to_state = "NJ",
+                amount = 16.50,
+                shipping = 1.50,
+                line_items = new[] {
+                    new
+                    {
+                        quantity = 1,
+                        unit_price = 15.0,
+                        product_tax_code = "31000"
+                    }
+                }
+            });
+
+            Assert.AreEqual(16.5, rates.OrderTotalAmount);
+            Assert.AreEqual(1.5, rates.Shipping);
+            Assert.AreEqual(16.5, rates.TaxableAmount);
+            Assert.AreEqual(1.16, rates.AmountToCollect);
+            Assert.AreEqual(0.07, rates.Rate);
+            Assert.AreEqual(true, rates.HasNexus);
+            Assert.AreEqual(true, rates.FreightTaxable);
+            Assert.AreEqual("destination", rates.TaxSource);
+
+            // Jurisdictions
+            Assert.AreEqual("US", rates.Jurisdictions.Country);
+            Assert.AreEqual("NJ", rates.Jurisdictions.State);
+            Assert.AreEqual("BERGEN", rates.Jurisdictions.County);
+            Assert.AreEqual("RAMSEY", rates.Jurisdictions.City);
+
+            // Breakdowns
+            Assert.AreEqual(1.5, rates.Breakdown.Shipping.TaxableAmount);
+            Assert.AreEqual(0.11, rates.Breakdown.Shipping.TaxCollectable);
+            Assert.AreEqual(0.07, rates.Breakdown.Shipping.CombinedTaxRate);
+            Assert.AreEqual(1.5, rates.Breakdown.Shipping.StateTaxableAmount);
+            Assert.AreEqual(0.11, rates.Breakdown.Shipping.StateAmount);
+            Assert.AreEqual(0.07, rates.Breakdown.Shipping.StateSalesTaxRate);
+            Assert.AreEqual(0, rates.Breakdown.Shipping.CountyTaxableAmount);
+            Assert.AreEqual(0, rates.Breakdown.Shipping.CountyAmount);
+            Assert.AreEqual(0, rates.Breakdown.Shipping.CountyTaxRate);
+            Assert.AreEqual(0, rates.Breakdown.Shipping.CityTaxableAmount);
+            Assert.AreEqual(0, rates.Breakdown.Shipping.CityAmount);
+            Assert.AreEqual(0, rates.Breakdown.Shipping.CityTaxRate);
+            Assert.AreEqual(0, rates.Breakdown.Shipping.SpecialDistrictTaxableAmount);
+            Assert.AreEqual(0, rates.Breakdown.Shipping.SpecialDistrictAmount);
+            Assert.AreEqual(0, rates.Breakdown.Shipping.SpecialDistrictTaxRate);
+
+            Assert.AreEqual(16.5, rates.Breakdown.TaxableAmount);
+            Assert.AreEqual(1.16, rates.Breakdown.TaxCollectable);
+            Assert.AreEqual(0.07, rates.Breakdown.CombinedTaxRate);
+            Assert.AreEqual(16.5, rates.Breakdown.StateTaxableAmount);
+            Assert.AreEqual(0.07, rates.Breakdown.StateTaxRate);
+            Assert.AreEqual(1.16, rates.Breakdown.StateTaxCollectable);
+            Assert.AreEqual(0, rates.Breakdown.CountyTaxableAmount);
+            Assert.AreEqual(0, rates.Breakdown.CountyTaxRate);
+            Assert.AreEqual(0, rates.Breakdown.CountyTaxCollectable);
+            Assert.AreEqual(0, rates.Breakdown.CityTaxableAmount);
+            Assert.AreEqual(0, rates.Breakdown.CityTaxRate);
+            Assert.AreEqual(0, rates.Breakdown.CityTaxCollectable);
+            Assert.AreEqual(0, rates.Breakdown.SpecialDistrictTaxableAmount);
+            Assert.AreEqual(0, rates.Breakdown.SpecialDistrictTaxRate);
+            Assert.AreEqual(0, rates.Breakdown.SpecialDistrictTaxCollectable);
+
+            // Line Items
+            Assert.AreEqual("1", rates.Breakdown.LineItems[0].Id);
+            Assert.AreEqual(15, rates.Breakdown.LineItems[0].TaxableAmount);
+            Assert.AreEqual(1.05, rates.Breakdown.LineItems[0].TaxCollectable);
+            Assert.AreEqual(0.07, rates.Breakdown.LineItems[0].CombinedTaxRate);
+            Assert.AreEqual(15, rates.Breakdown.LineItems[0].StateTaxableAmount);
+            Assert.AreEqual(0.07, rates.Breakdown.LineItems[0].StateSalesTaxRate);
+            Assert.AreEqual(1.05, rates.Breakdown.LineItems[0].StateAmount);
+            Assert.AreEqual(0, rates.Breakdown.LineItems[0].CountyTaxableAmount);
+            Assert.AreEqual(0, rates.Breakdown.LineItems[0].CountyTaxRate);
+            Assert.AreEqual(0, rates.Breakdown.LineItems[0].CountyAmount);
+            Assert.AreEqual(0, rates.Breakdown.LineItems[0].CityTaxableAmount);
+            Assert.AreEqual(0, rates.Breakdown.LineItems[0].CityTaxRate);
+            Assert.AreEqual(0, rates.Breakdown.LineItems[0].CityAmount);
+            Assert.AreEqual(0, rates.Breakdown.LineItems[0].SpecialDistrictTaxableAmount);
+            Assert.AreEqual(0, rates.Breakdown.LineItems[0].SpecialTaxRate);
+            Assert.AreEqual(0, rates.Breakdown.LineItems[0].SpecialDistrictAmount);
+        }
+
+        [Test]
 		public void when_calculating_sales_tax_for_an_international_order()
 		{
             var body = JsonConvert.DeserializeObject<TaxResponse>(TaxjarFixture.GetJSON("taxes_international.json"));
@@ -128,6 +233,7 @@ namespace Taxjar.Tests
             ).RespondWith(
                 Response.Create()
                     .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
                     .WithBodyAsJson(body)
             );
 
@@ -193,6 +299,7 @@ namespace Taxjar.Tests
             ).RespondWith(
                 Response.Create()
                     .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
                     .WithBodyAsJson(body)
             );
 

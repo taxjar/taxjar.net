@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Taxjar
@@ -7,7 +6,7 @@ namespace Taxjar
     public class RefundsResponse
     {
         [JsonProperty("refunds")]
-        public List<String> Refunds { get; set; }
+        public List<string> Refunds { get; set; }
     }
 
     public class RefundResponse
