@@ -662,10 +662,10 @@ You can pass additional options using `SetApiConfig` or when instantiating the c
 
 ```csharp
 // Custom timeout when instantiating the client
-var client = new TaxjarApi("[Your TaxJar API Key]", new { apiUrl = "https://api.taxjar.com", timeout = 30000 });
+var client = new TaxjarApi("[Your TaxJar API Key]", new { apiUrl = "https://api.taxjar.com", timeout = 30 * 1000 });
 
 // Custom timeout via `SetApiConfig`
-client.SetApiConfig("timeout", 30000);
+client.SetApiConfig("timeout", 30 * 1000);
 ```
 
 ## Sandbox Environment
@@ -679,8 +679,7 @@ var client = new TaxjarApi("[Your TaxJar Sandbox API Key]", new { apiUrl = "http
 For testing specific [error response codes](https://developers.taxjar.com/api/reference/#errors), pass the custom `X-TJ-Expected-Response` header:
 
 ```csharp
-client.SetApiConfig("headers", new Dictionary<string, string>
-{
+client.SetApiConfig("headers", new Dictionary<string, string> {
   { "X-TJ-Expected-Response", "422" }
 });
 ```
