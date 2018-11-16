@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using NUnit.Framework;
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using WireMock.RequestBuilders;
@@ -271,6 +272,41 @@ namespace Taxjar.Tests
             });
 
             AssertCustomer(customer);
+        }
+
+        [Test]
+        public void when_updating_a_customer_with_missing_customer_id()
+        {
+            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/customers/123")
+                    .UsingPut()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
+
+            var systemException = Assert.Throws<Exception>(() => Bootstrap.client.UpdateCustomer(new
+            {
+                exemption_type = "wholesale",
+                name = "Sterling Cooper",
+                exempt_regions = new[] {
+                    new {
+                      country = "US",
+                      state = "NY"
+                    }
+                },
+                country = "US",
+                state = "NY",
+                zip = "10010",
+                city = "New York",
+                street = "405 Madison Ave"
+            }));
+
+            Assert.AreEqual("Missing customer ID for `UpdateCustomer`", systemException.Message);
         }
 
         [Test]

@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using NUnit.Framework;
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using WireMock.RequestBuilders;
@@ -332,6 +333,41 @@ namespace Taxjar.Tests
         }
 
         [Test]
+        public void when_updating_an_order_transaction_with_missing_transaction_id()
+        {
+            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/orders/123")
+                    .UsingPut()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithBodyAsJson(body)
+            );
+
+            var systemException = Assert.Throws<Exception>(() => Bootstrap.client.UpdateOrder(new
+            {
+                amount = 17.95,
+                shipping = 2,
+                line_items = new[] {
+                    new {
+                        quantity = 1,
+                        product_identifier = "12-34243-0",
+                        description = "Heavy Widget",
+                        product_tax_code = "20010",
+                        unit_price = 15,
+                        discount = 0,
+                        sales_tax = 0.95
+                    }
+                }
+            }));
+
+            Assert.AreEqual("Missing transaction ID for `UpdateOrder`", systemException.Message);
+        }
+
+        [Test]
 		public void when_deleting_an_order_transaction()
 		{
             Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
@@ -599,6 +635,41 @@ namespace Taxjar.Tests
             });
 
             AssertRefund(refund);
+        }
+
+        [Test]
+        public void when_updating_a_refund_transaction_with_missing_transaction_id()
+        {
+            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/refunds/321")
+                    .UsingPut()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(HttpStatusCode.Created)
+                    .WithBodyAsJson(body)
+            );
+
+            var systemException = Assert.Throws<Exception>(() => Bootstrap.client.UpdateRefund(new
+            {
+                amount = 17.95,
+                shipping = 2,
+                line_items = new[] {
+                    new {
+                        quantity = 1,
+                        product_identifier = "12-34243-0",
+                        description = "Heavy Widget",
+                        product_tax_code = "20010",
+                        unit_price = 15,
+                        discount = 0,
+                        sales_tax = 0.95
+                    }
+                }
+            }));
+
+            Assert.AreEqual("Missing transaction ID for `UpdateRefund`", systemException.Message);
         }
 
         [Test]

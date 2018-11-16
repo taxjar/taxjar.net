@@ -214,7 +214,14 @@ namespace Taxjar
 
         public virtual OrderResponseAttributes UpdateOrder(object parameters)
         {
-            var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
+            var transactionIdProp = parameters.GetType().GetProperty("transaction_id") ?? parameters.GetType().GetProperty("TransactionId");
+
+            if (transactionIdProp == null)
+            {
+                throw new Exception("Missing transaction ID for `UpdateOrder`");
+            }
+
+            var transactionId = transactionIdProp.GetValue(parameters).ToString();
             var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.PUT);
             return response.Order;
         }
@@ -245,7 +252,13 @@ namespace Taxjar
 
         public virtual RefundResponseAttributes UpdateRefund(object parameters)
         {
-            var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
+            var transactionIdProp = parameters.GetType().GetProperty("transaction_id") ?? parameters.GetType().GetProperty("TransactionId");
+
+            if (transactionIdProp == null) {
+                throw new Exception("Missing transaction ID for `UpdateRefund`");
+            }
+
+            var transactionId = transactionIdProp.GetValue(parameters).ToString();
             var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.PUT);
             return response.Refund;
         }
@@ -276,7 +289,14 @@ namespace Taxjar
 
         public virtual CustomerResponseAttributes UpdateCustomer(object parameters)
         {
-            var customerId = parameters.GetType().GetProperty("customer_id").GetValue(parameters).ToString();
+            var customerIdProp = parameters.GetType().GetProperty("customer_id") ?? parameters.GetType().GetProperty("CustomerId");
+
+            if (customerIdProp == null)
+            {
+                throw new Exception("Missing customer ID for `UpdateCustomer`");
+            }
+
+            var customerId = customerIdProp.GetValue(parameters).ToString();
             var response = SendRequest<CustomerResponse>("customers/" + customerId, parameters, Method.PUT);
             return response.Customer;
         }
