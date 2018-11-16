@@ -69,16 +69,14 @@ var rates = await client.RatesForLocationAsync("90002", new {
   city = "LOS ANGELES",
   country = "US"
 });
-```
 
-### List tax rates for a location (by zip/postal code) using entity
-
-```csharp
+// Request Entity
 var rateEntity = new Rate {
   City = "LOS ANGELES",
   Country = "US"
 };
-var rates = client.RatesForLocation("90002",rateEntity);
+
+var rates = client.RatesForLocation("90002", rateEntity);
 ```
 
 ### Calculate sales tax for an order
@@ -106,48 +104,42 @@ var tax = await client.TaxForOrderAsync(new {
   amount = 16.50,
   shipping = 1.50
 });
-```
 
-### Calculate sales tax for an order using entity
-
-```csharp
-var taxEntity = new Tax
-{
-	FromCountry = "US",
-	FromZip = "07001",
-	FromState = "NJ",
-	ToCountry = "US",
-	ToZip = "07446",
-	ToState = "NJ",
-	Amount = 16.50M,
-	Shipping = 1.50M
+// Request Entity
+var taxEntity = new Tax {
+  FromCountry = "US",
+  FromZip = "07001",
+  FromState = "NJ",
+  ToCountry = "US",
+  ToZip = "07446",
+  ToState = "NJ",
+  Amount = 16.50,
+  Shipping = 1.50
 };
-var rates = client.TaxForOrder(taxEntity);
+
+var tax = client.TaxForOrder(taxEntity);
 ```
 
 ### List order transactions
 
 ```csharp
 var orders = client.ListOrders(new {
-	from_transaction_date = "2015/05/01",
-	to_transaction_date = "2015/05/31"
+  from_transaction_date = "2015/05/01",
+  to_transaction_date = "2015/05/31"
 });
 
 // Async Method
 var orders = await client.ListOrdersAsync(new {
-	from_transaction_date = "2015/05/01",
-	to_transaction_date = "2015/05/31"
+  from_transaction_date = "2015/05/01",
+  to_transaction_date = "2015/05/31"
 });
-```
 
-### List order transactions using entity
-
-```csharp
-var orderFilter = new OrderFilter
-{
-	FromTransactionDate = "2015/05/01",
-	ToTransactionDate = "2015/05/31"
+// Request Entity
+var orderFilter = new OrderFilter {
+  FromTransactionDate = "2015/05/01",
+  ToTransactionDate = "2015/05/31"
 };
+
 var orders = client.ListOrders(orderFilter);
 ```
 
@@ -205,43 +197,36 @@ var order = await client.CreateOrderAsync(new {
     }
   }
 });
-```
 
-### Create order transaction with order entity
-
-```csharp
-var orderEntity = new Order
-{
-	TransactionId = "123",
-	TransactionDate = "2015/05/04",
-	ToState = "CA",
-	ToCountry = "US",
-	ToZip = "90002",
-	ToCity = "Los Angeles",
-	ToStreet = "123 Palm Grove Ln",
-	Amount = 17M,
-	Shipping = 2M,
-	SalesTax = 0.95M,
-	LineItems = new List<LineItem>
-	{
-		new LineItem
-		{
-	  		Quantity = 1,
-	  		ProductIdentifier = "12-34243-0",
-	 		Description = "Heavy Widget",
-	  		UnitPrice = 15M,
-	  		SalesTax = 0.95M
-		}
-	}
+// Request Entity
+var orderEntity = new Order {
+  TransactionId = "123",
+  TransactionDate = "2015/05/04",
+  ToCountry = "US",
+  ToZip = "90002",
+  ToCity = "Los Angeles",
+  ToStreet = "123 Palm Grove Ln",
+  Amount = 17,
+  Shipping = 2,
+  SalesTax = 0.95,
+  LineItems = new List<LineItem> {
+    new LineItem {
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = 15,
+      SalesTax = 0.95
+    }
+  }
 };
+
 var order = client.CreateOrder(orderEntity);
 ```
 
 ### Update order transaction
 
 ```csharp
-var order = client.UpdateOrder(new
-{
+var order = client.UpdateOrder(new {
   transaction_id = "123",
   amount = 17,
   shipping = 2,
@@ -258,8 +243,7 @@ var order = client.UpdateOrder(new
 });
 
 // Async Method
-var order = await client.UpdateOrderAsync(new
-{
+var order = await client.UpdateOrderAsync(new {
   transaction_id = "123",
   amount = 17,
   shipping = 2,
@@ -274,32 +258,26 @@ var order = await client.UpdateOrderAsync(new
     }
   }
 });
-```
 
-### Update order transaction with order entity
-
-```csharp
-orderEntity = new Order
-{
-	TransactionId = "123",
-	Amount = 17M,
-	Shipping = 2M,
-	LineItems = new List<LineItem>
-	{
-		new LineItem
-			{
-	  			Quantity = 1,
-	  			ProductIdentifier = "12-34243-0",
-	  			Description = "Heavy Widget",
-	  			UnitPrice = 15M,
-	  			Discount = 0M,
-	  			SalesTax = 0.95M
-			}
-  	}
+// Request Entity
+var orderEntity = new Order {
+  TransactionId = "123",
+  Amount = 17,
+  Shipping = 2,
+  LineItems = new List<LineItem> {
+    new LineItem {
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = 15,
+      Discount = 0,
+      SalesTax = 0.95
+    }
+  }
 };
+
 var order = client.UpdateOrder(orderEntity);
 ```
-
 
 ### Delete order transaction
 
@@ -313,28 +291,24 @@ var order = await client.DeleteOrderAsync("123");
 ### List refund transactions
 
 ```csharp
-var refunds = client.ListRefunds(new
-{
+var refunds = client.ListRefunds(new {
   from_transaction_date = "2015/05/01",
   to_transaction_date = "2015/05/31"
 });
 
 // Async Method
-var refunds = await client.ListRefundsAsync(new
-{
+var refunds = await client.ListRefundsAsync(new {
   from_transaction_date = "2015/05/01",
   to_transaction_date = "2015/05/31"
 });
-```
-### List refund transactions with entity
 
-```csharp
-var refundFilterEntity = new RefundFilter
-{
-	FromTransactionDate = "2015/05/01",
-	ToTransactionDate = "2015/05/31"
+// Request Entity
+var refundFilter = new RefundFilter {
+  FromTransactionDate = "2015/05/01",
+  ToTransactionDate = "2015/05/31"
 };
-var refunds = client.ListRefunds(refundFilterEntity)
+
+var refunds = client.ListRefunds(refundFilter);
 ```
 
 ### Show refund transaction
@@ -349,8 +323,7 @@ var refund = await client.ShowRefundAsync("321");
 ### Create refund transaction
 
 ```csharp
-var refund = client.CreateRefund(new
-{
+var refund = client.CreateRefund(new {
   transaction_id = "321",
   transaction_date = "2015/05/04",
   transaction_reference_id = "123",
@@ -373,8 +346,7 @@ var refund = client.CreateRefund(new
 });
 
 // Async Method
-var refund = await client.CreateRefundAsync(new
-{
+var refund = await client.CreateRefundAsync(new {
   transaction_id = "321",
   transaction_date = "2015/05/04",
   transaction_reference_id = "123",
@@ -395,12 +367,9 @@ var refund = await client.CreateRefundAsync(new
     }
   }
 });
-```
-### Create refund transaction
 
-```csharp
-var refundEntity = new Refund
-{
+// Request Entity
+var refundEntity = new Refund {
   TransactionId = "321",
   TransactionDate = "2015/05/04",
   TransactionReferenceId = "123",
@@ -409,26 +378,26 @@ var refundEntity = new Refund
   ToCity = "Los Angeles",
   ToStreet = "123 Palm Grove Ln",
   Amount = 17,
-  Shipping = 2M,
-  SalesTax = 0.95M,
+  Shipping = 2,
+  SalesTax = 0.95,
   LineItems = new List<LineItem> {
-    new LineItem{
+    new LineItem {
       Quantity = 1,
       ProductIdentifier = "12-34243-0",
       Description = "Heavy Widget",
-      UnitPrice = 15M,
-      SalesTax = 0.95M
+      UnitPrice = 15,
+      SalesTax = 0.95
     }
   }
 };
+
 var refund = client.CreateRefund(refundEntity);
 ```
 
 ### Update refund transaction
 
 ```csharp
-var refund = client.UpdateRefund(new
-{
+var refund = client.UpdateRefund(new {
   transaction_id = "321",
   amount = 17,
   shipping = 2,
@@ -445,8 +414,7 @@ var refund = client.UpdateRefund(new
 });
 
 // Async Method
-var refund = await client.UpdateRefundAsync(new
-{
+var refund = await client.UpdateRefundAsync(new {
   transaction_id = "321",
   amount = 17,
   shipping = 2,
@@ -461,26 +429,24 @@ var refund = await client.UpdateRefundAsync(new
     }
   }
 });
-```
-### Update refund transaction
 
-```csharp
-var refundEntity = new Refund
-{
+// Request Entity
+var refundEntity = new Refund {
   TransactionId = "321",
-  Amount = 17M,
-  Shipping = 2M,
-  LineItems = new List<LineItem>{
-    new LineItem{
+  Amount = 17,
+  Shipping = 2,
+  LineItems = new List<LineItem> {
+    new LineItem {
       Quantity = 1,
       ProductIdentifier = "12-34243-0",
       Description = "Heavy Widget",
-      UnitPrice = 15M,
-      Discount = 0M,
-      SalesTax = 0.95M
+      UnitPrice = 15,
+      Discount = 0,
+      SalesTax = 0.95
     }
   }
 };
+
 var refund = client.UpdateRefund(refundEntity);
 ```
 
@@ -556,34 +522,29 @@ var customer = await client.CreateCustomerAsync(new {
   city = "Scranton",
   street = "1725 Slough Avenue"
 });
-```
-### Create customer using entity
 
-```csharp
-var customerEntity = new Customer
-{
-	CustomerId = "123",
-	ExemptionType = "wholesale",
-	Name = "Dunder Mifflin Paper Company",
-	ExemptRegions = new List<ExemptRegion>
-	{
-		new ExemptRegion 
-		{
-	  		Country = "US",
-	  		State = "FL"
-		},
-		new ExemptRegion
-		{
-	  		Country = "US",
-	  		State = "PA"
-		}
-  	},
-	Country = "US",
-	State = "PA",
-	Zip = "18504",
-	City = "Scranton",
-	Street = "1725 Slough Avenue"
+// Request Entity
+var customerEntity = new Customer {
+  CustomerId = "123",
+  ExemptionType = "wholesale",
+  Name = "Dunder Mifflin Paper Company",
+  ExemptRegions = new List<ExemptRegion> {
+    new ExemptRegion {
+      Country = "US",
+      State = "FL"
+    },
+    new ExemptRegion {
+      Country = "US",
+      State = "PA"
+    }
+  },
+  Country = "US",
+  State = "PA",
+  Zip = "18504",
+  City = "Scranton",
+  Street = "1725 Slough Avenue"
 };
+
 var customer = client.CreateCustomer(customerEntity);
 ```
 
@@ -624,17 +585,14 @@ var customer = await client.UpdateCustomerAsync(new {
   city = "New York",
   street = "405 Madison Ave"
 });
-```
 
-### Update customer using entity
-
-```csharp
+// Request Entity
 var customerEntity = new Customer {
   CustomerId = "123",
   ExemptionType = "wholesale",
   Name = "Sterling Cooper",
-  ExemptRegions = new List<ExemptRegion>{
-    new ExemptRegion{
+  ExemptRegions = new List<ExemptRegion> {
+    new ExemptRegion {
       Country = "US",
       State = "NY"
     }
@@ -645,6 +603,7 @@ var customerEntity = new Customer {
   City = "New York",
   Street = "405 Madison Ave"
 };
+
 var customer = client.UpdateCustomer(customerEntity);
 ```
 
@@ -677,17 +636,14 @@ var validation = client.ValidateVat(new {
 var validation = await client.ValidateVatAsync(new {
   vat = "FR40303265045"
 });
-```
-### Validate a VAT number using entity
 
-```csharp
-var vatEntity = new Validation
-{
+// Request Entity
+var vatEntity = new Validation {
   Vat = "FR40303265045"
 };
-var validation = client.Validate(vatEntity);
-```
 
+var validation = client.ValidateVat(vatEntity);
+```
 
 ### Summarize tax rates for all regions
 
