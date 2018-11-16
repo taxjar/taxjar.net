@@ -20,7 +20,7 @@
     <dependencies>
       <group>
         <dependency id="Newtonsoft.Json" version="11.0.2" />
-        <dependency id="RestSharp" version="[106.2.1,106.5.0)" />
+        <dependency id="RestSharp" version="[106.5.4,107.0.0)" />
       </group>
     </dependencies>
   </metadata>
