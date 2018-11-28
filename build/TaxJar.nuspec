@@ -3,7 +3,7 @@
   <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <id>TaxJar</id>
     <title>TaxJar</title>
-    <version>2.3.2</version>
+    <version>3.0.0</version>
     <authors>Jake Johnson</authors>
     <owners>TaxJar</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -12,7 +12,10 @@
     <iconUrl>https://github.com/taxjar/taxjar.net/raw/master/build/taxjar-icon.png</iconUrl>
     <description>TaxJar makes sales tax filing easier for online sellers and merchants. See local jurisdictional tax reports, get payment reminders, and more. You can use our API to access TaxJar API endpoints, which can get information on sales tax rates, categories or upload transactions.</description>
     <releaseNotes>
-- Fix request entity support for update customer method
+- Async / await methods
+- RestSharp v106.5.x support
+- Rename `Validate` method to `ValidateVat`
+- Custom timeouts now use milliseconds
     </releaseNotes>
     <language>en-US</language>
     <tags>sales tax taxes ecommerce</tags>
