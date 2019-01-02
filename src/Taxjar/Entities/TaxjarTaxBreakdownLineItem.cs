@@ -8,7 +8,7 @@ namespace Taxjar
 		public string Id { get; set; }
 
 		[JsonProperty("state_sales_tax_rate")]
-		public decimal StateSalesTaxRate { get; set; }
+		public decimal StateTaxRate { get; set; }
 
 		[JsonProperty("state_amount")]
 		public decimal StateAmount { get; set; }
@@ -23,7 +23,7 @@ namespace Taxjar
 		public decimal SpecialDistrictTaxableAmount { get; set; }
 
 		[JsonProperty("special_tax_rate")]
-		public decimal SpecialTaxRate { get; set; }
+		public decimal SpecialDistrictTaxRate { get; set; }
 
 		[JsonProperty("special_district_amount")]
 		public decimal SpecialDistrictAmount { get; set; }
