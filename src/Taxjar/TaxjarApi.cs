@@ -140,7 +140,7 @@ namespace Taxjar
                 throw new Exception(response.ErrorMessage, response.ErrorException);
             }
 
-            return response.Data;
+            return JsonConvert.DeserializeObject<T>(response.Content);
         }
 
         protected virtual async Task<T> SendRequestAsync<T>(string endpoint, object body = null, Method httpMethod = Method.POST) where T : new()
@@ -160,7 +160,7 @@ namespace Taxjar
                 throw new Exception(response.ErrorMessage, response.ErrorException);
             }
 
-            return response.Data;
+            return JsonConvert.DeserializeObject<T>(response.Content);
         }
 
         protected virtual bool IsAnonymousType(Type type)
