@@ -70,6 +70,16 @@ namespace Taxjar.Tests
         }
 
         [Test, Order(7)]
+        public void sets_api_url_via_api_config()
+        {
+            Bootstrap.client.SetApiConfig("apiUrl", "https://api.sandbox.taxjar.com");
+
+            var taxjarException = Assert.Throws<TaxjarException>(() => Bootstrap.client.Categories());
+
+            Assert.AreEqual("Unauthorized - Not authorized for route 'GET /v2/categories'", taxjarException.Message);
+        }
+
+        [Test, Order(8)]
         public void sets_custom_headers_via_api_config()
         {
             Dictionary<string, string> customHeaders = new Dictionary<string, string>
@@ -81,7 +91,7 @@ namespace Taxjar.Tests
             Assert.AreEqual(Bootstrap.client.GetApiConfig("headers"), customHeaders);
         }
 
-		[Test, Order(8)]
+        [Test, Order(9)]
 		public void returns_exception_with_invalid_api_token()
 		{
             Bootstrap.server.Given(
@@ -103,7 +113,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual("401", taxjarException.TaxjarError.StatusCode);
 		}
 
-        [Test, Order(9)]
+        [Test, Order(10)]
         public void returns_exception_with_timeout()
         {
             Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191", timeout = 1 });

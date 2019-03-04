@@ -64,6 +64,7 @@ namespace Taxjar
             if (key == "apiUrl")
             {
                 value += "/" + TaxjarConstants.ApiVersion + "/";
+                apiClient = new RestClient(value.ToString());
             }
 
             GetType().GetProperty(key).SetValue(this, value, null);
