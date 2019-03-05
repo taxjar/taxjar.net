@@ -55,16 +55,16 @@ namespace Taxjar
 		[JsonProperty("standard_rate")]
 		public decimal StandardRate { get; set; }
 
-		[JsonProperty("reduced_rate")]
+		[JsonProperty("reduced_rate", NullValueHandling = NullValueHandling.Ignore)]
 		public decimal ReducedRate { get; set; }
 
-		[JsonProperty("super_reduced_rate")]
+		[JsonProperty("super_reduced_rate", NullValueHandling = NullValueHandling.Ignore)]
 		public decimal SuperReducedRate { get; set; }
 
-		[JsonProperty("parking_rate")]
+		[JsonProperty("parking_rate", NullValueHandling = NullValueHandling.Ignore)]
 		public decimal ParkingRate { get; set; }
 
-		[JsonProperty("distance_sale_threshold")]
+		[JsonProperty("distance_sale_threshold", NullValueHandling = NullValueHandling.Ignore)]
 		public decimal DistanceSaleThreshold { get; set; }
 	}
 
