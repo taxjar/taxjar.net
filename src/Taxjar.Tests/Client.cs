@@ -73,6 +73,7 @@ namespace Taxjar.Tests
         public void sets_api_url_via_api_config()
         {
             Bootstrap.client.SetApiConfig("apiUrl", "https://api.sandbox.taxjar.com");
+            Bootstrap.client.SetApiConfig("apiToken", "123");
 
             var taxjarException = Assert.Throws<TaxjarException>(() => Bootstrap.client.Categories());
 
