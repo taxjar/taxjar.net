@@ -36,8 +36,10 @@ To authenticate with our API, add a new AppSetting with your TaxJar API key to y
 </appSettings>
 ```
 ```csharp
-var client = new TaxjarApi();
+var client = new TaxjarApi(ConfigurationManager.AppSettings["TaxjarApiKey"]);
 ```
+
+Note: This method requires [System.Configuration.ConfigurationManager](https://docs.microsoft.com/en-us/dotnet/api/system.configuration.configurationmanager?view=netframework-4.5.2) on .NET Framework 4.x. If you'd like to use this method on .NET Standard or Core, reference the [NuGet package](https://www.nuget.org/packages/System.Configuration.ConfigurationManager/) in your project.
 
 ### Method B
 
