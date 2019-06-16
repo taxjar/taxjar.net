@@ -382,7 +382,18 @@ namespace Taxjar.Tests
         [Test]
 		public void when_deleting_an_order_transaction()
 		{
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
+            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/delete.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/orders/123")
+                    .UsingDelete()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
 
 			var order = Bootstrap.client.DeleteOrder("123", new {
 				provider = "api"
@@ -393,7 +404,18 @@ namespace Taxjar.Tests
         [Test]
         public async Task when_deleting_an_order_transaction_async()
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
+            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/delete.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/orders/123")
+                    .UsingDelete()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
 
             var order = await Bootstrap.client.DeleteOrderAsync("123", new {
                 provider = "api"
@@ -699,7 +721,18 @@ namespace Taxjar.Tests
         [Test]
 		public void when_deleting_a_refund_transaction()
 		{
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
+            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/delete.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/refunds/321")
+                    .UsingDelete()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
 
 			var refund = Bootstrap.client.DeleteRefund("321", new {
 				provider = "api"
@@ -710,7 +743,18 @@ namespace Taxjar.Tests
         [Test]
         public async Task when_deleting_a_refund_transaction_async()
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
+            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/delete.json"));
+
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/refunds/321")
+                    .UsingDelete()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
 
             var refund = await Bootstrap.client.DeleteRefundAsync("321", new {
                 provider = "api"
