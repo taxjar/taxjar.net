@@ -79,7 +79,7 @@ namespace Taxjar
         {
             var request = new RestRequest(action, method)
             {
-                RequestFormat = DataFormat.Json 
+                RequestFormat = DataFormat.Json
             };
 
             request.AddHeader("Authorization", "Bearer " + apiToken);
@@ -174,7 +174,7 @@ namespace Taxjar
             return Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false)
                 && type.IsGenericType && type.Name.Contains("AnonymousType")
                 && (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"))
-                && (type.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;   
+                && (type.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;
         }
 
         public virtual List<Category> Categories()
@@ -201,9 +201,9 @@ namespace Taxjar
             return response.Orders;
         }
 
-        public virtual OrderResponseAttributes ShowOrder(string transactionId)
+        public virtual OrderResponseAttributes ShowOrder(string transactionId, object parameters = null)
         {
-            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, null, Method.GET);
+            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.GET);
             return response.Order;
         }
 
@@ -227,9 +227,9 @@ namespace Taxjar
             return response.Order;
         }
 
-        public virtual OrderResponseAttributes DeleteOrder(string transactionId)
+        public virtual OrderResponseAttributes DeleteOrder(string transactionId, object parameters = null)
         {
-            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, null, Method.DELETE);
+            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.DELETE);
             return response.Order;
         }
 
@@ -239,9 +239,9 @@ namespace Taxjar
             return response.Refunds;
         }
 
-        public virtual RefundResponseAttributes ShowRefund(string transactionId)
+        public virtual RefundResponseAttributes ShowRefund(string transactionId, object parameters = null)
         {
-            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, null, Method.GET);
+            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.GET);
             return response.Refund;
         }
 
@@ -264,9 +264,9 @@ namespace Taxjar
             return response.Refund;
         }
 
-        public virtual RefundResponseAttributes DeleteRefund(string transactionId)
+        public virtual RefundResponseAttributes DeleteRefund(string transactionId, object parameters = null)
         {
-            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, null, Method.DELETE);
+            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.DELETE);
             return response.Refund;
         }
 
@@ -356,9 +356,9 @@ namespace Taxjar
             return response.Orders;
         }
 
-        public virtual async Task<OrderResponseAttributes> ShowOrderAsync(string transactionId)
+        public virtual async Task<OrderResponseAttributes> ShowOrderAsync(string transactionId, object parameters = null)
         {
-            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, null, Method.GET);
+            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.GET);
             return response.Order;
         }
 
@@ -375,9 +375,9 @@ namespace Taxjar
             return response.Order;
         }
 
-        public virtual async Task<OrderResponseAttributes> DeleteOrderAsync(string transactionId)
+        public virtual async Task<OrderResponseAttributes> DeleteOrderAsync(string transactionId, object parameters = null)
         {
-            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, null, Method.DELETE);
+            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.DELETE);
             return response.Order;
         }
 
@@ -387,9 +387,9 @@ namespace Taxjar
             return response.Refunds;
         }
 
-        public virtual async Task<RefundResponseAttributes> ShowRefundAsync(string transactionId)
+        public virtual async Task<RefundResponseAttributes> ShowRefundAsync(string transactionId, object parameters = null)
         {
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, null, Method.GET);
+            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.GET);
             return response.Refund;
         }
 
@@ -406,9 +406,9 @@ namespace Taxjar
             return response.Refund;
         }
 
-        public virtual async Task<RefundResponseAttributes> DeleteRefundAsync(string transactionId)
+        public virtual async Task<RefundResponseAttributes> DeleteRefundAsync(string transactionId, object parameters = null)
         {
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, null, Method.DELETE);
+            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.DELETE);
             return response.Refund;
         }
 

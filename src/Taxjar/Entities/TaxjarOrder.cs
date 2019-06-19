@@ -26,6 +26,9 @@ namespace Taxjar
         [JsonProperty("transaction_date")]
         public string TransactionDate { get; set; }
 
+        [JsonProperty("provider")]
+        public string Provider { get; set; }
+
         [JsonProperty("from_country")]
         public string FromCountry { get; set; }
 
@@ -76,6 +79,9 @@ namespace Taxjar
 
         [JsonProperty("transaction_date")]
         public string TransactionDate { get; set; }
+
+        [JsonProperty("provider")]
+        public string Provider { get; set; }
 
         [JsonProperty("from_country")]
         public string FromCountry { get; set; }
@@ -133,5 +139,8 @@ namespace Taxjar
 
         [JsonProperty("to_transaction_date")]
         public string ToTransactionDate { get; set; }
+
+        [JsonProperty("provider")]
+        public string Provider { get; set; }
     }
 }

@@ -23,6 +23,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual("123", order.TransactionId);
 			Assert.AreEqual(10649, order.UserId);
 			Assert.AreEqual("2015-05-14T00:00:00Z", order.TransactionDate);
+			Assert.AreEqual("api", order.Provider);
 			Assert.AreEqual("US", order.ToCountry);
 			Assert.AreEqual("90002", order.ToZip);
 			Assert.AreEqual("CA", order.ToState);
@@ -45,6 +46,7 @@ namespace Taxjar.Tests
 		{
 			Assert.AreEqual("123", order.TransactionId);
 			Assert.AreEqual(null, order.TransactionDate);
+			Assert.AreEqual("api", order.Provider);
 			Assert.AreEqual(0, order.Amount);
 			Assert.AreEqual(0, order.Shipping);
 			Assert.AreEqual(0, order.SalesTax);
@@ -56,6 +58,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual("123", refund.TransactionReferenceId);
 			Assert.AreEqual(10649, refund.UserId);
 			Assert.AreEqual("2015-05-14T00:00:00Z", refund.TransactionDate);
+			Assert.AreEqual("api", refund.Provider);
 			Assert.AreEqual("US", refund.ToCountry);
 			Assert.AreEqual("90002", refund.ToZip);
 			Assert.AreEqual("CA", refund.ToState);
@@ -78,6 +81,7 @@ namespace Taxjar.Tests
 		{
 			Assert.AreEqual("321", refund.TransactionId);
 			Assert.AreEqual(null, refund.TransactionDate);
+			Assert.AreEqual("api", refund.Provider);
 			Assert.AreEqual(0, refund.Amount);
 			Assert.AreEqual(0, refund.Shipping);
 			Assert.AreEqual(0, refund.SalesTax);
@@ -101,7 +105,8 @@ namespace Taxjar.Tests
 
 			var orders = Bootstrap.client.ListOrders(new {
 				from_transaction_date = "2015/05/01",
-				to_transaction_date = "2015/05/31"
+				to_transaction_date = "2015/05/31",
+				provider = "api"
 			});
 
 			Assert.AreEqual("123", orders[0]);
@@ -127,7 +132,8 @@ namespace Taxjar.Tests
             var orders = await Bootstrap.client.ListOrdersAsync(new
             {
                 from_transaction_date = "2015/05/01",
-                to_transaction_date = "2015/05/31"
+                to_transaction_date = "2015/05/31",
+                provider = "api"
             });
 
             Assert.AreEqual("123", orders[0]);
@@ -150,7 +156,9 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-			var order = Bootstrap.client.ShowOrder("123");
+			var order = Bootstrap.client.ShowOrder("123", new {
+				provider = "api"
+			});
 			AssertOrder(order);
 		}
 
@@ -170,7 +178,9 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var order = await Bootstrap.client.ShowOrderAsync("123");
+            var order = await Bootstrap.client.ShowOrderAsync("123", new {
+                provider = "api"
+            });
 
             AssertOrder(order);
         }
@@ -194,6 +204,7 @@ namespace Taxjar.Tests
 			var order = Bootstrap.client.CreateOrder(new {
 				transaction_id = "123",
 				transaction_date = "2015/05/04",
+				provider = "api",
 				to_country = "US",
 				to_zip = "90002",
 				to_city = "Los Angeles",
@@ -236,6 +247,7 @@ namespace Taxjar.Tests
             {
                 transaction_id = "123",
                 transaction_date = "2015/05/04",
+                provider = "api",
                 to_country = "US",
                 to_zip = "90002",
                 to_city = "Los Angeles",
@@ -370,18 +382,44 @@ namespace Taxjar.Tests
         [Test]
 		public void when_deleting_an_order_transaction()
 		{
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
+            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/delete.json"));
 
-			var order = Bootstrap.client.DeleteOrder("123");
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/orders/123")
+                    .UsingDelete()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+			var order = Bootstrap.client.DeleteOrder("123", new {
+				provider = "api"
+			});
 			AssertDeletedOrder(order);
 		}
 
         [Test]
         public async Task when_deleting_an_order_transaction_async()
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
+            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/delete.json"));
 
-            var order = await Bootstrap.client.DeleteOrderAsync("123");
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/orders/123")
+                    .UsingDelete()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+            var order = await Bootstrap.client.DeleteOrderAsync("123", new {
+                provider = "api"
+            });
             AssertDeletedOrder(order);
         }
 
@@ -404,7 +442,8 @@ namespace Taxjar.Tests
 			var refunds = Bootstrap.client.ListRefunds(new
 			{
 				from_transaction_date = "2015/05/01",
-				to_transaction_date = "2015/05/31"
+				to_transaction_date = "2015/05/31",
+				provider = "api"
 			});
 
 			Assert.AreEqual("321", refunds[0]);
@@ -430,7 +469,8 @@ namespace Taxjar.Tests
             var refunds = await Bootstrap.client.ListRefundsAsync(new
             {
                 from_transaction_date = "2015/05/01",
-                to_transaction_date = "2015/05/31"
+                to_transaction_date = "2015/05/31",
+                provider = "api"
             });
 
             Assert.AreEqual("321", refunds[0]);
@@ -453,7 +493,9 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-			var refund = Bootstrap.client.ShowRefund("321");
+			var refund = Bootstrap.client.ShowRefund("321", new {
+				provider = "api"
+			});
 			AssertRefund(refund);
 		}
 
@@ -473,7 +515,9 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var refund = await Bootstrap.client.ShowRefundAsync("321");
+            var refund = await Bootstrap.client.ShowRefundAsync("321", new {
+                provider = "api"
+            });
             AssertRefund(refund);
         }
 
@@ -498,6 +542,7 @@ namespace Taxjar.Tests
 				transaction_id = "321",
 				transaction_date = "2015/05/04",
 				transaction_reference_id = "123",
+				provider = "api",
 				to_country = "US",
 				to_zip = "90002",
 				to_city = "Los Angeles",
@@ -541,6 +586,7 @@ namespace Taxjar.Tests
                 transaction_id = "321",
                 transaction_date = "2015/05/04",
                 transaction_reference_id = "123",
+                provider = "api",
                 to_country = "US",
                 to_zip = "90002",
                 to_city = "Los Angeles",
@@ -675,18 +721,44 @@ namespace Taxjar.Tests
         [Test]
 		public void when_deleting_a_refund_transaction()
 		{
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
+            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/delete.json"));
 
-			var refund = Bootstrap.client.DeleteRefund("321");
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/refunds/321")
+                    .UsingDelete()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+			var refund = Bootstrap.client.DeleteRefund("321", new {
+				provider = "api"
+			});
 			AssertDeletedRefund(refund);
 		}
 
         [Test]
         public async Task when_deleting_a_refund_transaction_async()
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "https://api.sandbox.taxjar.com" });
+            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/delete.json"));
 
-            var refund = await Bootstrap.client.DeleteRefundAsync("321");
+            Bootstrap.server.Given(
+                Request.Create()
+                    .WithPath("/v2/transactions/refunds/321")
+                    .UsingDelete()
+            ).RespondWith(
+                Response.Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithBodyAsJson(body)
+            );
+
+            var refund = await Bootstrap.client.DeleteRefundAsync("321", new {
+                provider = "api"
+            });
             AssertDeletedRefund(refund);
         }
     }
