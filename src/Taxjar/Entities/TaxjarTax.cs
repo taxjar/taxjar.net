@@ -35,6 +35,9 @@ namespace Taxjar
 		[JsonProperty("tax_source")]
 		public string TaxSource { get; set; }
 
+        [JsonProperty("exemption_type")]
+        public string ExemptionType { get; set; }
+
         [JsonProperty("jurisdictions")]
         public TaxJurisdictions Jurisdictions { get; set; }
 
@@ -82,6 +85,9 @@ namespace Taxjar
 
         [JsonProperty("customer_id")]
         public string CustomerId { get; set; }
+
+        [JsonProperty("exemption_type")]
+        public string ExemptionType { get; set; }
 
         [JsonProperty("nexus_addresses")]
         public List<NexusAddress> NexusAddresses { get; set; }
