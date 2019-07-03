@@ -24,6 +24,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(10649, order.UserId);
 			Assert.AreEqual("2015-05-14T00:00:00Z", order.TransactionDate);
 			Assert.AreEqual("api", order.Provider);
+			Assert.AreEqual("non_exempt", order.ExemptionType);
 			Assert.AreEqual("US", order.ToCountry);
 			Assert.AreEqual("90002", order.ToZip);
 			Assert.AreEqual("CA", order.ToState);
@@ -47,6 +48,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual("123", order.TransactionId);
 			Assert.AreEqual(null, order.TransactionDate);
 			Assert.AreEqual("api", order.Provider);
+			Assert.AreEqual(null, order.ExemptionType);
 			Assert.AreEqual(0, order.Amount);
 			Assert.AreEqual(0, order.Shipping);
 			Assert.AreEqual(0, order.SalesTax);
@@ -59,6 +61,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(10649, refund.UserId);
 			Assert.AreEqual("2015-05-14T00:00:00Z", refund.TransactionDate);
 			Assert.AreEqual("api", refund.Provider);
+			Assert.AreEqual("non_exempt", refund.ExemptionType);
 			Assert.AreEqual("US", refund.ToCountry);
 			Assert.AreEqual("90002", refund.ToZip);
 			Assert.AreEqual("CA", refund.ToState);
@@ -82,6 +85,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual("321", refund.TransactionId);
 			Assert.AreEqual(null, refund.TransactionDate);
 			Assert.AreEqual("api", refund.Provider);
+			Assert.AreEqual(null, refund.ExemptionType);
 			Assert.AreEqual(0, refund.Amount);
 			Assert.AreEqual(0, refund.Shipping);
 			Assert.AreEqual(0, refund.SalesTax);
@@ -205,6 +209,7 @@ namespace Taxjar.Tests
 				transaction_id = "123",
 				transaction_date = "2015/05/04",
 				provider = "api",
+				exemption_type = "non_exempt",
 				to_country = "US",
 				to_zip = "90002",
 				to_city = "Los Angeles",
@@ -248,6 +253,7 @@ namespace Taxjar.Tests
                 transaction_id = "123",
                 transaction_date = "2015/05/04",
                 provider = "api",
+                exemption_type = "non_exempt",
                 to_country = "US",
                 to_zip = "90002",
                 to_city = "Los Angeles",
@@ -291,6 +297,7 @@ namespace Taxjar.Tests
 				transaction_id = "123",
 				amount = 17.95,
 				shipping = 2,
+				exemption_type = "non_exempt",
 				line_items = new[] {
 					new {
 						quantity = 1,
@@ -328,6 +335,7 @@ namespace Taxjar.Tests
                 transaction_id = "123",
                 amount = 17.95,
                 shipping = 2,
+                exemption_type = "non_exempt",
                 line_items = new[] {
                     new {
                         quantity = 1,
@@ -363,6 +371,7 @@ namespace Taxjar.Tests
             {
                 amount = 17.95,
                 shipping = 2,
+                exemption_type = "non_exempt",
                 line_items = new[] {
                     new {
                         quantity = 1,
@@ -543,6 +552,7 @@ namespace Taxjar.Tests
 				transaction_date = "2015/05/04",
 				transaction_reference_id = "123",
 				provider = "api",
+				exemption_type = "non_exempt",
 				to_country = "US",
 				to_zip = "90002",
 				to_city = "Los Angeles",
@@ -587,6 +597,7 @@ namespace Taxjar.Tests
                 transaction_date = "2015/05/04",
                 transaction_reference_id = "123",
                 provider = "api",
+                exemption_type = "non_exempt",
                 to_country = "US",
                 to_zip = "90002",
                 to_city = "Los Angeles",
@@ -630,6 +641,7 @@ namespace Taxjar.Tests
 				transaction_id = "321",
 				amount = 17.95,
 				shipping = 2,
+				exemption_type = "non_exempt",
 				line_items = new[] {
 					new {
 						quantity = 1,
@@ -667,6 +679,7 @@ namespace Taxjar.Tests
                 transaction_id = "321",
                 amount = 17.95,
                 shipping = 2,
+                exemption_type = "non_exempt",
                 line_items = new[] {
                     new {
                         quantity = 1,
@@ -702,6 +715,7 @@ namespace Taxjar.Tests
             {
                 amount = 17.95,
                 shipping = 2,
+                exemption_type = "non_exempt",
                 line_items = new[] {
                     new {
                         quantity = 1,
