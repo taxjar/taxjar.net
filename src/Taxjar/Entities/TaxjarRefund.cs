@@ -32,6 +32,9 @@ namespace Taxjar
         [JsonProperty("provider")]
         public string Provider { get; set; }
 
+        [JsonProperty("exemption_type")]
+        public string ExemptionType { get; set; }
+
         [JsonProperty("from_country")]
         public string FromCountry { get; set; }
 
@@ -88,6 +91,9 @@ namespace Taxjar
 
         [JsonProperty("provider")]
         public string Provider { get; set; }
+
+        [JsonProperty("exemption_type")]
+        public string ExemptionType { get; set; }
 
         [JsonProperty("from_country")]
         public string FromCountry { get; set; }

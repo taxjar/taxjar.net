@@ -5,6 +5,7 @@
     "transaction_date": null,
     "transaction_reference_id": null,
     "provider": "api",
+    "exemption_type": null,
     "from_country": null,
     "from_zip": null,
     "from_state": null,

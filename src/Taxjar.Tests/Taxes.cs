@@ -41,6 +41,7 @@ namespace Taxjar.Tests
 				to_state = "NY",
 				amount = 60,
 				shipping = 10,
+				exemption_type = "non_exempt",
 				line_items = new[] {
 					new
 					{
@@ -58,6 +59,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(true, rates.HasNexus);
 			Assert.AreEqual(true, rates.FreightTaxable);
 			Assert.AreEqual("destination", rates.TaxSource);
+			Assert.AreEqual("non_exempt", rates.ExemptionType);
 
             // Jurisdictions
             Assert.AreEqual("US", rates.Jurisdictions.Country);
@@ -143,6 +145,7 @@ namespace Taxjar.Tests
                 to_state = "NY",
                 amount = 60,
                 shipping = 10,
+                exemption_type = "non_exempt",
                 line_items = new[] {
                     new
                     {
@@ -160,6 +163,7 @@ namespace Taxjar.Tests
             Assert.AreEqual(true, rates.HasNexus);
             Assert.AreEqual(true, rates.FreightTaxable);
             Assert.AreEqual("destination", rates.TaxSource);
+            Assert.AreEqual("non_exempt", rates.ExemptionType);
 
             // Jurisdictions
             Assert.AreEqual("US", rates.Jurisdictions.Country);
@@ -243,6 +247,7 @@ namespace Taxjar.Tests
 				to_zip = "00150",
 				amount = 16.95,
 				shipping = 10,
+				exemption_type = "non_exempt",
 				line_items = new[] {
 					new
 					{
@@ -257,6 +262,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(true, rates.HasNexus);
 			Assert.AreEqual(true, rates.FreightTaxable);
 			Assert.AreEqual("destination", rates.TaxSource);
+			Assert.AreEqual("non_exempt", rates.ExemptionType);
 
             // Jurisdictions
             Assert.AreEqual("FI", rates.Jurisdictions.Country);
@@ -311,6 +317,7 @@ namespace Taxjar.Tests
 				to_state = "ON",
 				amount = 16.95,
 				shipping = 10,
+				exemption_type = "non_exempt",
 				line_items = new[] {
 					new
 					{
@@ -328,6 +335,7 @@ namespace Taxjar.Tests
 			Assert.AreEqual(true, rates.HasNexus);
 			Assert.AreEqual(true, rates.FreightTaxable);
 			Assert.AreEqual("destination", rates.TaxSource);
+			Assert.AreEqual("non_exempt", rates.ExemptionType);
 
             // Jurisdictions
             Assert.AreEqual("CA", rates.Jurisdictions.Country);
