@@ -6,12 +6,12 @@ using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
-	[TestFixture]
+    [TestFixture]
     public class NexusTests
-	{
-		[Test]
-		public void when_listing_nexus_regions()
-		{
+    {
+        [Test]
+        public void when_listing_nexus_regions()
+        {
             var body = JsonConvert.DeserializeObject<NexusRegionsResponse>(TaxjarFixture.GetJSON("nexus_regions.json"));
 
             Bootstrap.server.Given(
@@ -27,12 +27,12 @@ namespace Taxjar.Tests
 
             var nexusRegions = Bootstrap.client.NexusRegions();
 
-			Assert.AreEqual(3, nexusRegions.Count);
-			Assert.AreEqual("US", nexusRegions[0].CountryCode);
-			Assert.AreEqual("United States", nexusRegions[0].Country);
-			Assert.AreEqual("CA", nexusRegions[0].RegionCode);
-			Assert.AreEqual("California", nexusRegions[0].Region);
-		}
+            Assert.AreEqual(3, nexusRegions.Count);
+            Assert.AreEqual("US", nexusRegions[0].CountryCode);
+            Assert.AreEqual("United States", nexusRegions[0].Country);
+            Assert.AreEqual("CA", nexusRegions[0].RegionCode);
+            Assert.AreEqual("California", nexusRegions[0].Region);
+        }
 
         [Test]
         public async Task when_listing_nexus_regions_async()

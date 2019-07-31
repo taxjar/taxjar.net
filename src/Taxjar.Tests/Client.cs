@@ -7,9 +7,9 @@ using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
-	[TestFixture]
+    [TestFixture]
     public class ClientTests
-	{
+    {
         [SetUp]
         public static void Init()
         {
@@ -17,17 +17,17 @@ namespace Taxjar.Tests
             Bootstrap.server.ResetMappings();
         }
 
-		[Test, Order(1)]
-		public void instantiates_client_with_api_token()
-		{
+        [Test, Order(1)]
+        public void instantiates_client_with_api_token()
+        {
             Bootstrap.client = new TaxjarApi(Bootstrap.apiKey);
-		}
+        }
 
-		[Test, Order(2)]
-		public void instantiates_client_with_additional_arguments()
-		{
+        [Test, Order(2)]
+        public void instantiates_client_with_additional_arguments()
+        {
             Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191" });
-		}
+        }
 
         [Test, Order(3)]
         public void instantiates_client_with_custom_headers()
@@ -93,8 +93,8 @@ namespace Taxjar.Tests
         }
 
         [Test, Order(9)]
-		public void returns_exception_with_invalid_api_token()
-		{
+        public void returns_exception_with_invalid_api_token()
+        {
             Bootstrap.server.Given(
                 Request.Create()
                     .WithPath("/v2/categories")
@@ -108,11 +108,11 @@ namespace Taxjar.Tests
 
             var taxjarException = Assert.Throws<TaxjarException>(() => Bootstrap.client.Categories());
 
-			Assert.AreEqual(HttpStatusCode.Unauthorized, taxjarException.HttpStatusCode);
-			Assert.AreEqual("Unauthorized", taxjarException.TaxjarError.Error);
-			Assert.AreEqual("Not authorized for route 'GET /v2/categories'", taxjarException.TaxjarError.Detail);
-			Assert.AreEqual("401", taxjarException.TaxjarError.StatusCode);
-		}
+            Assert.AreEqual(HttpStatusCode.Unauthorized, taxjarException.HttpStatusCode);
+            Assert.AreEqual("Unauthorized", taxjarException.TaxjarError.Error);
+            Assert.AreEqual("Not authorized for route 'GET /v2/categories'", taxjarException.TaxjarError.Detail);
+            Assert.AreEqual("401", taxjarException.TaxjarError.StatusCode);
+        }
 
         [Test, Order(10)]
         public void returns_exception_with_timeout()
@@ -134,5 +134,5 @@ namespace Taxjar.Tests
 
             Assert.AreEqual("The operation has timed out.", systemException.Message);
         }
-	}
+    }
 }
