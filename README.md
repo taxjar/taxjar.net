@@ -1,8 +1,8 @@
 # TaxJar Sales Tax API for .NET / C&#35; [![Nuget](https://img.shields.io/nuget/v/taxjar)](https://www.nuget.org/packages/TaxJar/)
 
-<a href="http://developers.taxjar.com"><img src="http://www.taxjar.com/img/TJ_logo_color_office_png.png" alt="TaxJar" width="220"></a>
+<a href="https://developers.taxjar.com"><img src="https://www.taxjar.com/img/TJ_logo_color_office_png.png" alt="TaxJar" width="220"></a>
 
-Official .NET / C# client for [SmartCalcs](http://www.taxjar.com/api/reference/?csharp) by [TaxJar](http://www.taxjar.com). For the API documentation, please visit [http://developers.taxjar.com/api](http://developers.taxjar.com/api/reference/?csharp).
+Official .NET / C# client for [SmartCalcs](https://www.taxjar.com/api/reference/?csharp) by [TaxJar](https://www.taxjar.com). For the API documentation, please visit [https://developers.taxjar.com/api](https://developers.taxjar.com/api/reference/?csharp).
 
 <hr>
 
@@ -949,7 +949,7 @@ TAXJAR_API_KEY=YOUR_TAXJAR_SANDBOX_API_KEY
 
 ## More Information
 
-More information can be found at [TaxJar Developers](http://developers.taxjar.com).
+More information can be found at [TaxJar Developers](https://developers.taxjar.com).
 
 ## License
 
