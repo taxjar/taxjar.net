@@ -19,7 +19,7 @@
     <copyright>Copyright (c) 2019 TaxJar</copyright>
     <dependencies>
       <group>
-        <dependency id="Newtonsoft.Json" version="11.0.2" />
+        <dependency id="Newtonsoft.Json" version="12.0.3" />
         <dependency id="RestSharp" version="[106.6.9,107.0.0)" />
       </group>
     </dependencies>
