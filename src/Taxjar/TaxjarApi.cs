@@ -95,8 +95,6 @@ namespace Taxjar
             {
                 if (IsAnonymousType(body.GetType()))
                 {
-                    request.AddJsonBody(body);
-
                     if (method == Method.GET)
                     {
                         foreach (var prop in body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
@@ -104,11 +102,13 @@ namespace Taxjar
                             request.AddQueryParameter(prop.Name, prop.GetValue(body).ToString());
                         }
                     }
+                    else
+                    {
+                        request.AddJsonBody(body);
+                    }
                 }
                 else
                 {
-                    request.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
-
                     if (method == Method.GET)
                     {
                         body = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(body));
@@ -117,6 +117,10 @@ namespace Taxjar
                         {
                             request.AddQueryParameter(prop.Name, prop.Value.ToString());
                         }
+                    }
+                    else
+                    {
+                        request.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
                     }
                 }
             }
