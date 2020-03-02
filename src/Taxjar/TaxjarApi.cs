@@ -151,7 +151,7 @@ namespace Taxjar
         protected virtual async Task<T> SendRequestAsync<T>(string endpoint, object body = null, Method httpMethod = Method.POST) where T : new()
         {
             var request = CreateRequest(endpoint, httpMethod, body);
-            var response = await apiClient.ExecuteTaskAsync<T>(request);
+            var response = await apiClient.ExecuteAsync<T>(request);
 
             if ((int)response.StatusCode >= 400)
             {
