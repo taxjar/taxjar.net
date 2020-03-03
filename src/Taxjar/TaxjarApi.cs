@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -81,6 +82,7 @@ namespace Taxjar
             {
                 RequestFormat = DataFormat.Json
             };
+            var includeBody = new[] {Method.POST, Method.PUT, Method.PATCH}.Contains(method);
 
             request.AddHeader("Authorization", "Bearer " + apiToken);
 
@@ -95,21 +97,25 @@ namespace Taxjar
             {
                 if (IsAnonymousType(body.GetType()))
                 {
-                    if (method == Method.GET)
+                    if (includeBody)
+                    {
+                        request.AddJsonBody(body);
+                    }
+                    else
                     {
                         foreach (var prop in body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
                         {
                             request.AddQueryParameter(prop.Name, prop.GetValue(body).ToString());
                         }
                     }
-                    else
-                    {
-                        request.AddJsonBody(body);
-                    }
                 }
                 else
                 {
-                    if (method == Method.GET)
+                    if (includeBody)
+                    {
+                        request.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
+                    }
+                    else
                     {
                         body = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(body));
 
@@ -117,10 +123,6 @@ namespace Taxjar
                         {
                             request.AddQueryParameter(prop.Name, prop.Value.ToString());
                         }
-                    }
-                    else
-                    {
-                        request.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
                     }
                 }
             }
