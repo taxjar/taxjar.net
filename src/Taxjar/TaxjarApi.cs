@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -81,6 +82,7 @@ namespace Taxjar
             {
                 RequestFormat = DataFormat.Json
             };
+            var includeBody = new[] {Method.POST, Method.PUT, Method.PATCH}.Contains(method);
 
             request.AddHeader("Authorization", "Bearer " + apiToken);
 
@@ -95,9 +97,11 @@ namespace Taxjar
             {
                 if (IsAnonymousType(body.GetType()))
                 {
-                    request.AddJsonBody(body);
-
-                    if (method == Method.GET)
+                    if (includeBody)
+                    {
+                        request.AddJsonBody(body);
+                    }
+                    else
                     {
                         foreach (var prop in body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
                         {
@@ -107,9 +111,11 @@ namespace Taxjar
                 }
                 else
                 {
-                    request.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
-
-                    if (method == Method.GET)
+                    if (includeBody)
+                    {
+                        request.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
+                    }
+                    else
                     {
                         body = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(body));
 
@@ -147,7 +153,7 @@ namespace Taxjar
         protected virtual async Task<T> SendRequestAsync<T>(string endpoint, object body = null, Method httpMethod = Method.POST) where T : new()
         {
             var request = CreateRequest(endpoint, httpMethod, body);
-            var response = await apiClient.ExecuteTaskAsync<T>(request);
+            var response = await apiClient.ExecuteAsync<T>(request);
 
             if ((int)response.StatusCode >= 400)
             {
