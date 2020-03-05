@@ -6,7 +6,7 @@
     <AssemblyName>TaxJar.Tests</AssemblyName>
     <IsPackable>false</IsPackable>
     <SignAssembly>true</SignAssembly>
-    <ReleaseVersion>3.1.2</ReleaseVersion>
+    <ReleaseVersion>3.2.0</ReleaseVersion>
     <OutputType>Library</OutputType>
   </PropertyGroup>
 
