@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -58,6 +59,7 @@ namespace Taxjar
             }
 
             apiClient = new RestClient(apiUrl);
+            apiClient.UserAgent = getUserAgent();
         }
 
         public virtual void SetApiConfig(string key, object value)
@@ -66,6 +68,7 @@ namespace Taxjar
             {
                 value += "/" + TaxjarConstants.ApiVersion + "/";
                 apiClient = new RestClient(value.ToString());
+                apiClient.UserAgent = getUserAgent();
             }
 
             GetType().GetProperty(key).SetValue(this, value, null);
@@ -471,6 +474,16 @@ namespace Taxjar
         {
             var response = await SendRequestAsync<SummaryRatesResponse>("summary_rates", null, Method.GET).ConfigureAwait(false);
             return response.SummaryRates;
+        }
+
+        private string getUserAgent()
+        {
+            String platform = RuntimeInformation.OSDescription;
+            String arch = RuntimeInformation.OSArchitecture.ToString();
+            String framework = RuntimeInformation.FrameworkDescription;
+            String version = GetType().Assembly.GetName().Version.ToString(3);
+
+            return $"TaxJar/.NET ({platform}; {arch}; {framework}) taxjar.net/{version}";
         }
     }
 }
