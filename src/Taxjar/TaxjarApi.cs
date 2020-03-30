@@ -68,7 +68,6 @@ namespace Taxjar
             {
                 value += "/" + TaxjarConstants.ApiVersion + "/";
                 apiClient = new RestClient(value.ToString());
-                apiClient.UserAgent = getUserAgent();
             }
 
             GetType().GetProperty(key).SetValue(this, value, null);
@@ -87,12 +86,13 @@ namespace Taxjar
             };
             var includeBody = new[] {Method.POST, Method.PUT, Method.PATCH}.Contains(method);
 
-            request.AddHeader("Authorization", "Bearer " + apiToken);
-
             foreach (var header in headers)
             {
                 request.AddHeader(header.Key, header.Value);
             }
+
+            request.AddHeader("Authorization", "Bearer " + apiToken);
+            request.AddHeader("User-Agent", getUserAgent());
 
             request.Timeout = timeout;
 
@@ -478,10 +478,21 @@ namespace Taxjar
 
         private string getUserAgent()
         {
-            String platform = RuntimeInformation.OSDescription;
-            String arch = RuntimeInformation.OSArchitecture.ToString();
-            String framework = RuntimeInformation.FrameworkDescription;
-            String version = GetType().Assembly.GetName().Version.ToString(3);
+            #if NET452
+                string platform = Environment.OSVersion.VersionString;
+                string arch = Environment.Is64BitOperatingSystem
+                    ? "X64"
+                    : platform.Contains("Win")
+                        ? "X86"
+                        : "i386";
+                string framework = "net452";
+            #else
+                string platform = RuntimeInformation.OSDescription;
+                string arch = RuntimeInformation.OSArchitecture.ToString();
+                string framework = RuntimeInformation.FrameworkDescription;
+            #endif
+
+            string version = GetType().Assembly.GetName().Version.ToString(3);
 
             return $"TaxJar/.NET ({platform}; {arch}; {framework}) taxjar.net/{version}";
         }

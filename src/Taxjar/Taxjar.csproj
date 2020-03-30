@@ -13,6 +13,7 @@
     <PackageProjectUrl>https://github.com/taxjar/taxjar.net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/taxjar/taxjar.net/blob/master/LICENSE.txt</PackageLicenseUrl>
     <ReleaseVersion>3.2.1</ReleaseVersion>
+    <DefineConstants Condition=" '$(TargetFramework)' == 'net452' ">NET452</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
