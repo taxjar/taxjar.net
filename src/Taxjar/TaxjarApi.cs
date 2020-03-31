@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -58,6 +59,7 @@ namespace Taxjar
             }
 
             apiClient = new RestClient(apiUrl);
+            apiClient.UserAgent = getUserAgent();
         }
 
         public virtual void SetApiConfig(string key, object value)
@@ -84,12 +86,13 @@ namespace Taxjar
             };
             var includeBody = new[] {Method.POST, Method.PUT, Method.PATCH}.Contains(method);
 
-            request.AddHeader("Authorization", "Bearer " + apiToken);
-
             foreach (var header in headers)
             {
                 request.AddHeader(header.Key, header.Value);
             }
+
+            request.AddHeader("Authorization", "Bearer " + apiToken);
+            request.AddHeader("User-Agent", getUserAgent());
 
             request.Timeout = timeout;
 
@@ -471,6 +474,27 @@ namespace Taxjar
         {
             var response = await SendRequestAsync<SummaryRatesResponse>("summary_rates", null, Method.GET).ConfigureAwait(false);
             return response.SummaryRates;
+        }
+
+        private string getUserAgent()
+        {
+            #if NET452
+                string platform = Environment.OSVersion.VersionString;
+                string arch = Environment.Is64BitOperatingSystem
+                    ? "X64"
+                    : platform.Contains("Win")
+                        ? "X86"
+                        : "i386";
+                string framework = "net452";
+            #else
+                string platform = RuntimeInformation.OSDescription;
+                string arch = RuntimeInformation.OSArchitecture.ToString();
+                string framework = RuntimeInformation.FrameworkDescription;
+            #endif
+
+            string version = GetType().Assembly.GetName().Version.ToString(3);
+
+            return $"TaxJar/.NET ({platform}; {arch}; {framework}) taxjar.net/{version}";
         }
     }
 }
