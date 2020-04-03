@@ -5,7 +5,7 @@ namespace Taxjar
 	public class TaxBreakdownShipping : Breakdown
 	{
 		[JsonProperty("state_sales_tax_rate")]
-		public decimal StateSalesTaxRate { get; set; }
+		public decimal StateTaxRate { get; set; }
 
 		[JsonProperty("state_amount")]
 		public decimal StateAmount { get; set; }
