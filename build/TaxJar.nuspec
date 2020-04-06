@@ -3,7 +3,7 @@
   <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <id>TaxJar</id>
     <title>TaxJar</title>
-    <version>3.1.0</version>
+    <version>3.3.0</version>
     <authors>Jake Johnson</authors>
     <owners>TaxJar</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -12,17 +12,15 @@
     <iconUrl>https://github.com/taxjar/taxjar.net/raw/master/build/taxjar-icon.png</iconUrl>
     <description>TaxJar makes sales tax filing easier for online sellers and merchants. See local jurisdictional tax reports, get payment reminders, and more. You can use our API to access TaxJar API endpoints, which can get information on sales tax rates, categories or upload transactions.</description>
     <releaseNotes>
-- Support `provider` param for marketplace exempt transactions
-- Support `exemption_type` param for order-level exempt transactions
-- Update RestSharp dependency to v106.6.9
+- Include custom user agent for debugging and informational purposes
     </releaseNotes>
     <language>en-US</language>
     <tags>sales tax taxes ecommerce</tags>
     <copyright>Copyright (c) 2019 TaxJar</copyright>
     <dependencies>
       <group>
-        <dependency id="Newtonsoft.Json" version="11.0.2" />
-        <dependency id="RestSharp" version="[106.6.9,107.0.0)" />
+        <dependency id="Newtonsoft.Json" version="12.0.3" />
+        <dependency id="RestSharp" version="[106.10.1,107.0.0)" />
       </group>
     </dependencies>
   </metadata>

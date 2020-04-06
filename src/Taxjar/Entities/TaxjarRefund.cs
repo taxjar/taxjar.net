@@ -89,10 +89,10 @@ namespace Taxjar
         [JsonProperty("transaction_date")]
         public string TransactionDate { get; set; }
 
-        [JsonProperty("provider")]
+        [JsonProperty("provider", NullValueHandling = NullValueHandling.Ignore)]
         public string Provider { get; set; }
 
-        [JsonProperty("exemption_type")]
+        [JsonProperty("exemption_type", NullValueHandling = NullValueHandling.Ignore)]
         public string ExemptionType { get; set; }
 
         [JsonProperty("from_country")]

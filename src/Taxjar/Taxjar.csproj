@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
     <Description>TaxJar makes sales tax filing easier for online sellers and merchants. See local jurisdictional tax reports, get payment reminders, and more. You can use our API to access TaxJar API endpoints, which can get information on sales tax rates, categories or upload transactions.</Description>
     <AssemblyTitle>TaxJar</AssemblyTitle>
-    <Version>3.1.0</Version>
+    <Version>3.3.0</Version>
     <Authors>Jake Johnson</Authors>
     <AssemblyName>TaxJar</AssemblyName>
     <PackageId>TaxJar</PackageId>
@@ -12,7 +12,8 @@
     <RootNamespace>Taxjar</RootNamespace>
     <PackageProjectUrl>https://github.com/taxjar/taxjar.net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/taxjar/taxjar.net/blob/master/LICENSE.txt</PackageLicenseUrl>
-    <ReleaseVersion>3.1.0</ReleaseVersion>
+    <ReleaseVersion>3.3.0</ReleaseVersion>
+    <DefineConstants Condition=" '$(TargetFramework)' == 'net452' ">NET452</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -26,8 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="RestSharp" Version="106.6.9" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="RestSharp" Version="106.10.1" />
   </ItemGroup>
 
 </Project>
