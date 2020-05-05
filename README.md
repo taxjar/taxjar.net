@@ -2,7 +2,7 @@
 
 <a href="https://developers.taxjar.com"><img src="https://www.taxjar.com/img/TJ_logo_color_office_png.png" alt="TaxJar" width="220"></a>
 
-Official .NET / C# client for [SmartCalcs](https://www.taxjar.com/api/reference/?csharp) by [TaxJar](https://www.taxjar.com). For the API documentation, please visit [https://developers.taxjar.com/api](https://developers.taxjar.com/api/reference/?csharp).
+Official .NET / C# client for the [TaxJar API](https://www.taxjar.com/api/reference/?csharp). For the API documentation, please visit [https://developers.taxjar.com/api](https://developers.taxjar.com/api/reference/?csharp).
 
 <hr>
 
@@ -853,7 +853,7 @@ var validation = client.ValidateVat(vatEntity);
 
 > Retrieve minimum and average sales tax rates by region as a backup.
 >
-> This method is useful for periodically pulling down rates to use if the SmartCalcs API is unavailable. However, it does not support nexus determination, sourcing based on a ship from and ship to address, shipping taxability, product exemptions, customer exemptions, or sales tax holidays. We recommend using [`TaxForOrder` to accurately calculate sales tax for an order](#calculate-sales-tax-for-an-order-api-docs).
+> This method is useful for periodically pulling down rates to use if the TaxJar API is unavailable. However, it does not support nexus determination, sourcing based on a ship from and ship to address, shipping taxability, product exemptions, customer exemptions, or sales tax holidays. We recommend using [`TaxForOrder` to accurately calculate sales tax for an order](#calculate-sales-tax-for-an-order-api-docs).
 
 ```csharp
 var summaryRates = client.SummaryRates();
