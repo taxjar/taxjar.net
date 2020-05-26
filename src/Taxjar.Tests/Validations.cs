@@ -6,9 +6,9 @@ using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
-	[TestFixture]
-	public class ValidationTests
-	{
+    [TestFixture]
+    public class ValidationTests
+    {
         [SetUp]
         public static void Init()
         {
@@ -117,8 +117,8 @@ namespace Taxjar.Tests
         }
 
         [Test]
-		public void when_validating_a_vat_number()
-		{
+        public void when_validating_a_vat_number()
+        {
             var body = JsonConvert.DeserializeObject<ValidationResponse>(TaxjarFixture.GetJSON("validation.json"));
 
             Bootstrap.server.Given(
@@ -133,19 +133,19 @@ namespace Taxjar.Tests
             );
 
             var validation = Bootstrap.client.ValidateVat(new {
-				vat = "FR40303265045"
-			});
+                vat = "FR40303265045"
+            });
 
-			Assert.AreEqual(true, validation.Valid);
-			Assert.AreEqual(true, validation.Exists);
-			Assert.AreEqual(true, validation.ViesAvailable);
-			Assert.AreEqual("FR", validation.ViesResponse.CountryCode);
-			Assert.AreEqual("40303265045", validation.ViesResponse.VatNumber);
-			Assert.AreEqual("2016-02-10", validation.ViesResponse.RequestDate);
-			Assert.AreEqual(true, validation.ViesResponse.Valid);
-			Assert.AreEqual("SA SODIMAS", validation.ViesResponse.Name);
-			Assert.AreEqual("11 RUE AMPEREn26600 PONT DE L ISERE", validation.ViesResponse.Address);
-		}
+            Assert.AreEqual(true, validation.Valid);
+            Assert.AreEqual(true, validation.Exists);
+            Assert.AreEqual(true, validation.ViesAvailable);
+            Assert.AreEqual("FR", validation.ViesResponse.CountryCode);
+            Assert.AreEqual("40303265045", validation.ViesResponse.VatNumber);
+            Assert.AreEqual("2016-02-10", validation.ViesResponse.RequestDate);
+            Assert.AreEqual(true, validation.ViesResponse.Valid);
+            Assert.AreEqual("SA SODIMAS", validation.ViesResponse.Name);
+            Assert.AreEqual("11 RUE AMPEREn26600 PONT DE L ISERE", validation.ViesResponse.Address);
+        }
 
         [Test]
         public async Task when_validating_a_vat_number_async()

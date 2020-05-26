@@ -6,12 +6,12 @@ using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
-	[TestFixture]
+    [TestFixture]
     public class CategoriesTests
-	{
-		[Test]
-		public void when_listing_tax_categories()
-		{
+    {
+        [Test]
+        public void when_listing_tax_categories()
+        {
             var body = JsonConvert.DeserializeObject<CategoriesResponse>(TaxjarFixture.GetJSON("categories.json"));
 
             Bootstrap.server.Given(
@@ -31,7 +31,7 @@ namespace Taxjar.Tests
             Assert.AreEqual("Clothing", categories[0].Name);
             Assert.AreEqual("20010", categories[0].ProductTaxCode);
             Assert.AreEqual("All human wearing apparel suitable for general use", categories[0].Description);
-		}
+        }
 
         [Test]
         public async Task when_listing_tax_categories_async()
