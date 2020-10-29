@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using Taxjar.Infrastructure;
 using RestRequest = RestSharp.RestRequest;
 
 namespace Taxjar
@@ -59,7 +60,7 @@ namespace Taxjar
             }
 
             apiClient = new RestClient(apiUrl);
-            apiClient.UserAgent = getUserAgent();
+            apiClient.UserAgent = GetUserAgent();
         }
 
         public virtual void SetApiConfig(string key, object value)
@@ -92,7 +93,7 @@ namespace Taxjar
             }
 
             request.AddHeader("Authorization", "Bearer " + apiToken);
-            request.AddHeader("User-Agent", getUserAgent());
+            request.AddHeader("User-Agent", GetUserAgent());
 
             request.Timeout = timeout;
 
@@ -224,14 +225,7 @@ namespace Taxjar
 
         public virtual OrderResponseAttributes UpdateOrder(object parameters)
         {
-            var transactionIdProp = parameters.GetType().GetProperty("transaction_id") ?? parameters.GetType().GetProperty("TransactionId");
-
-            if (transactionIdProp == null)
-            {
-                throw new Exception("Missing transaction ID for `UpdateOrder`");
-            }
-
-            var transactionId = transactionIdProp.GetValue(parameters).ToString();
+            var transactionId = GetTransactionIdFromParameters(parameters);
             var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.PUT);
             return response.Order;
         }
@@ -262,13 +256,8 @@ namespace Taxjar
 
         public virtual RefundResponseAttributes UpdateRefund(object parameters)
         {
-            var transactionIdProp = parameters.GetType().GetProperty("transaction_id") ?? parameters.GetType().GetProperty("TransactionId");
+            var transactionId = GetTransactionIdFromParameters(parameters);
 
-            if (transactionIdProp == null) {
-                throw new Exception("Missing transaction ID for `UpdateRefund`");
-            }
-
-            var transactionId = transactionIdProp.GetValue(parameters).ToString();
             var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.PUT);
             return response.Refund;
         }
@@ -299,14 +288,8 @@ namespace Taxjar
 
         public virtual CustomerResponseAttributes UpdateCustomer(object parameters)
         {
-            var customerIdProp = parameters.GetType().GetProperty("customer_id") ?? parameters.GetType().GetProperty("CustomerId");
+            var customerId = GetCustomerIdFromParameters(parameters);
 
-            if (customerIdProp == null)
-            {
-                throw new Exception("Missing customer ID for `UpdateCustomer`");
-            }
-
-            var customerId = customerIdProp.GetValue(parameters).ToString();
             var response = SendRequest<CustomerResponse>("customers/" + customerId, parameters, Method.PUT);
             return response.Customer;
         }
@@ -379,7 +362,7 @@ namespace Taxjar
 
         public virtual async Task<OrderResponseAttributes> UpdateOrderAsync(object parameters)
         {
-            var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
+            var transactionId = GetTransactionIdFromParameters(parameters);
             var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.PUT).ConfigureAwait(false);
             return response.Order;
         }
@@ -410,7 +393,7 @@ namespace Taxjar
 
         public virtual async Task<RefundResponseAttributes> UpdateRefundAsync(object parameters)
         {
-            var transactionId = parameters.GetType().GetProperty("transaction_id").GetValue(parameters).ToString();
+            var transactionId = GetTransactionIdFromParameters(parameters);
             var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.PUT).ConfigureAwait(false);
             return response.Refund;
         }
@@ -441,7 +424,7 @@ namespace Taxjar
 
         public virtual async Task<CustomerResponseAttributes> UpdateCustomerAsync(object parameters)
         {
-            var customerId = parameters.GetType().GetProperty("customer_id").GetValue(parameters).ToString();
+            var customerId = GetCustomerIdFromParameters(parameters);
             var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, parameters, Method.PUT).ConfigureAwait(false);
             return response.Customer;
         }
@@ -476,7 +459,39 @@ namespace Taxjar
             return response.SummaryRates;
         }
 
-        private string getUserAgent()
+        private string GetTransactionIdFromParameters(object parameters)
+        {
+            var propertyInfo = parameters.GetType().GetProperty("transaction_id") ?? parameters.GetType().GetProperty("TransactionId");
+
+            var transactionId = GetValueOrDefault(parameters, propertyInfo);
+
+            if (string.IsNullOrWhiteSpace(transactionId))
+            {
+                throw new ArgumentException(ErrorMessage.MissingTransactionId);
+            }
+
+            return transactionId;
+        }
+
+        private string GetCustomerIdFromParameters(object parameters)
+        {
+            var propertyInfo = parameters.GetType().GetProperty("customer_id") ?? parameters.GetType().GetProperty("CustomerId");
+
+            var customerId = GetValueOrDefault(parameters, propertyInfo);
+            if (string.IsNullOrWhiteSpace(customerId))
+            {
+                throw new Exception(ErrorMessage.MissingCustomerId);
+            }
+
+            return customerId;
+        }
+
+        private string GetValueOrDefault(object parameters, PropertyInfo propertyInfo)
+        {
+            return propertyInfo == null ? null : propertyInfo.GetValue(parameters).ToString();
+        }
+
+        private string GetUserAgent()
         {
             #if NET452
                 string platform = Environment.OSVersion.VersionString;

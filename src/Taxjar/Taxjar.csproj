@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <Folder Include="Entities\" />
-    <Folder Include="Infrastructure\" />
     <Folder Include="Properties\" />
   </ItemGroup>
 
