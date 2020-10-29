@@ -12,3 +12,4 @@ TaxJar.dll
 Taxjar.userprefs
 
 .env
+secrets.json

@@ -941,10 +941,12 @@ catch(TaxjarException e)
 
 ## Tests
 
-We use [NUnit](https://github.com/nunit/nunit) and [WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) for testing. Before running the specs, create a `.env` file inside the `Taxjar.Tests` directory with your sandbox API key:
+We use [NUnit](https://github.com/nunit/nunit) and [WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) for testing. Before running the specs, create a `secrets.json` file inside the `Taxjar.Tests` directory with your sandbox API Token:
 
 ```
-TAXJAR_API_KEY=YOUR_TAXJAR_SANDBOX_API_KEY
+{
+  "ApiToken": "YOUR_SANDBOX_KEY"
+}
 ```
 
 ## More Information
