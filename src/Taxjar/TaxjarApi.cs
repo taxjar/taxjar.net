@@ -480,7 +480,7 @@ namespace Taxjar
             var customerId = GetValueOrDefault(parameters, propertyInfo);
             if (string.IsNullOrWhiteSpace(customerId))
             {
-                throw new Exception(ErrorMessage.MissingCustomerId);
+                throw new ArgumentException(ErrorMessage.MissingCustomerId);
             }
 
             return customerId;

@@ -312,7 +312,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var systemException = Assert.Throws<Exception>(() => Bootstrap.client.UpdateCustomer(new
+            var systemException = Assert.Throws<ArgumentException>(() => Bootstrap.client.UpdateCustomer(new
             {
                 exemption_type = "wholesale",
                 name = "Sterling Cooper",
