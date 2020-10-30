@@ -1,8 +1,9 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Taxjar.Infrastructure;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 
@@ -330,9 +331,32 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
+            // verify transaction_id
             var order = await Bootstrap.client.UpdateOrderAsync(new
             {
                 transaction_id = "123",
+                amount = 17.95,
+                shipping = 2,
+                exemption_type = "non_exempt",
+                line_items = new[] {
+                    new {
+                        quantity = 1,
+                        product_identifier = "12-34243-0",
+                        description = "Heavy Widget",
+                        product_tax_code = "20010",
+                        unit_price = 15,
+                        discount = 0,
+                        sales_tax = 0.95
+                    }
+                }
+            });
+
+            AssertOrder(order);
+
+            // verify TransactionId
+            order = await Bootstrap.client.UpdateOrderAsync(new
+            {
+                TransactionId = "123",
                 amount = 17.95,
                 shipping = 2,
                 exemption_type = "non_exempt",
@@ -367,7 +391,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var systemException = Assert.Throws<Exception>(() => Bootstrap.client.UpdateOrder(new
+            var systemException = Assert.Throws<ArgumentException>(() => Bootstrap.client.UpdateOrder(new
             {
                 amount = 17.95,
                 shipping = 2,
@@ -385,7 +409,7 @@ namespace Taxjar.Tests
                 }
             }));
 
-            Assert.AreEqual("Missing transaction ID for `UpdateOrder`", systemException.Message);
+            Assert.AreEqual(ErrorMessage.MissingTransactionId, systemException.Message);
         }
 
         [Test]
@@ -711,7 +735,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var systemException = Assert.Throws<Exception>(() => Bootstrap.client.UpdateRefund(new
+            var systemException = Assert.Throws<ArgumentException>(() => Bootstrap.client.UpdateRefund(new
             {
                 amount = 17.95,
                 shipping = 2,
@@ -729,7 +753,7 @@ namespace Taxjar.Tests
                 }
             }));
 
-            Assert.AreEqual("Missing transaction ID for `UpdateRefund`", systemException.Message);
+            Assert.AreEqual(ErrorMessage.MissingTransactionId, systemException.Message);
         }
 
         [Test]

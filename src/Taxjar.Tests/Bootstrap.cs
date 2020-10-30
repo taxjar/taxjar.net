@@ -1,8 +1,8 @@
-﻿using NUnit.Framework;
+using System.IO;
+using Newtonsoft.Json;
+using NUnit.Framework;
 using WireMock.Server;
 using WireMock.Settings;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
 
 namespace Taxjar.Tests
 {
@@ -16,8 +16,6 @@ namespace Taxjar.Tests
         [OneTimeSetUp]
         public static void Init()
         {
-            DotNetEnv.Env.Load("../../../.env");
-
             if (server == null)
             {
                 server = FluentMockServer.Start(new FluentMockServerSettings
@@ -26,7 +24,8 @@ namespace Taxjar.Tests
                 });
             }
 
-            apiKey = System.Environment.GetEnvironmentVariable("TAXJAR_API_KEY") ?? "foo123";
+            var options = GetTestOptions();
+            apiKey = options.ApiToken;
             client = new TaxjarApi(apiKey, new { apiUrl = "http://localhost:9191" });
         }
 
@@ -34,6 +33,18 @@ namespace Taxjar.Tests
         public static void Destroy()
         {
             server.Stop();
+        }
+
+        private static TestOptions GetTestOptions()
+        {
+            var json = File.ReadAllText("../../../secrets.json");
+            var options = JsonConvert.DeserializeObject<TestOptions>(json);
+            return options;
+        }
+
+        private class TestOptions
+        {
+            public string ApiToken { get; set; }
         }
     }
 }

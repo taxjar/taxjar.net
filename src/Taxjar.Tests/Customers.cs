@@ -1,8 +1,9 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Taxjar.Infrastructure;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 
@@ -253,6 +254,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
+            // verify customer_id
             var customer = await Bootstrap.client.UpdateCustomerAsync(new
             {
                 customer_id = "123",
@@ -262,6 +264,27 @@ namespace Taxjar.Tests
                     new {
                       country = "US",
                       state = "NY"
+                    }
+                },
+                country = "US",
+                state = "NY",
+                zip = "10010",
+                city = "New York",
+                street = "405 Madison Ave"
+            });
+
+            AssertCustomer(customer);
+
+            // verify CustomerId
+            customer = await Bootstrap.client.UpdateCustomerAsync(new
+            {
+                CustomerId = "123",
+                exemption_type = "wholesale",
+                name = "Sterling Cooper",
+                exempt_regions = new[] {
+                    new {
+                        country = "US",
+                        state = "NY"
                     }
                 },
                 country = "US",
@@ -289,7 +312,7 @@ namespace Taxjar.Tests
                     .WithBodyAsJson(body)
             );
 
-            var systemException = Assert.Throws<Exception>(() => Bootstrap.client.UpdateCustomer(new
+            var systemException = Assert.Throws<ArgumentException>(() => Bootstrap.client.UpdateCustomer(new
             {
                 exemption_type = "wholesale",
                 name = "Sterling Cooper",
@@ -306,7 +329,7 @@ namespace Taxjar.Tests
                 street = "405 Madison Ave"
             }));
 
-            Assert.AreEqual("Missing customer ID for `UpdateCustomer`", systemException.Message);
+            Assert.AreEqual(ErrorMessage.MissingCustomerId, systemException.Message);
         }
 
         [Test]
