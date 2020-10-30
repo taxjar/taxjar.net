@@ -462,7 +462,6 @@ namespace Taxjar
         private string GetTransactionIdFromParameters(object parameters)
         {
             var propertyInfo = parameters.GetType().GetProperty("transaction_id") ?? parameters.GetType().GetProperty("TransactionId");
-
             var transactionId = GetValueOrDefault(parameters, propertyInfo);
 
             if (string.IsNullOrWhiteSpace(transactionId))
@@ -476,8 +475,8 @@ namespace Taxjar
         private string GetCustomerIdFromParameters(object parameters)
         {
             var propertyInfo = parameters.GetType().GetProperty("customer_id") ?? parameters.GetType().GetProperty("CustomerId");
-
             var customerId = GetValueOrDefault(parameters, propertyInfo);
+
             if (string.IsNullOrWhiteSpace(customerId))
             {
                 throw new ArgumentException(ErrorMessage.MissingCustomerId);
