@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.3.1] - 2020-11-02
+- Fix async methods when passing a `TransactionId` or `CustomerId` property
+
+## [3.3.0] - 2020-03-31
+- Include custom user agent for debugging and informational purposes
+
+## [3.2.1] - 2020-03-09
+- Fix .NET standard binary version
+
+## [3.2.0] - 2020-03-04
+- Update RestSharp to version 106.10.1
+- Improve performance of async methods with `ConfigureAwait(false)`
+
+## [3.1.2] - 2020-01-15
+- Update Newtonsoft.Json to version 12.0.3
+
+## [3.1.1] - 2019-12-16
+- Ignore null values passed to optional `ExemptionType` and `Provider` params for non-anonymous objects
+
 ## [3.1.0] - 2019-07-09
 - Add `provider` param to transaction methods
 - Support order-level exemptions via `exemption_type` param
@@ -78,7 +97,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.0.0] - 2016-09-20
 - Initial release
 
-[Unreleased]: https://github.com/taxjar/taxjar.net/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/taxjar/taxjar.net/compare/v3.3.1...HEAD
+[3.3.1]: https://github.com/taxjar/taxjar.net/compare/v3.3.0...v3.3.1
+[3.3.0]: https://github.com/taxjar/taxjar.net/compare/v3.2.1...v3.3.0
+[3.2.1]: https://github.com/taxjar/taxjar.net/compare/v3.2.0...v3.2.1
+[3.2.0]: https://github.com/taxjar/taxjar.net/compare/v3.1.2...v3.2.0
+[3.1.2]: https://github.com/taxjar/taxjar.net/compare/v3.1.1...v3.1.2
+[3.1.1]: https://github.com/taxjar/taxjar.net/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/taxjar/taxjar.net/compare/v3.0.2...v3.1.0
 [3.0.2]: https://github.com/taxjar/taxjar.net/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/taxjar/taxjar.net/compare/v3.0.0...v3.0.1
