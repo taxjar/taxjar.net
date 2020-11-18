@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -20,20 +21,24 @@ namespace Taxjar
         public const string ApiVersion = "v2";
     }
 
-    public class TaxjarApi
+    public class TaxjarApi : ITaxjarApi
     {
-        internal RestClient apiClient;
+        internal RestClient _apiClient;
+
         public string apiToken { get; set; }
+
         public string apiUrl { get; set; }
+
         public IDictionary<string, string> headers { get; set; }
-        public int timeout { get; set; }
+
+        public int Timeout { get; set; }
 
         public TaxjarApi(string token, object parameters = null)
         {
             apiToken = token;
             apiUrl = TaxjarConstants.DefaultApiUrl + "/" + TaxjarConstants.ApiVersion + "/";
             headers = new Dictionary<string, string>();
-            timeout = 0; // Milliseconds
+            Timeout = 0; // Milliseconds
 
             if (parameters != null)
             {
@@ -45,12 +50,12 @@ namespace Taxjar
 
                 if (parameters.GetType().GetProperty("headers") != null)
                 {
-                    headers = (IDictionary<string, string>) parameters.GetType().GetProperty("headers").GetValue(parameters);
+                    headers = (IDictionary<string, string>)parameters.GetType().GetProperty("headers").GetValue(parameters);
                 }
 
                 if (parameters.GetType().GetProperty("timeout") != null)
                 {
-                    timeout = (int) parameters.GetType().GetProperty("timeout").GetValue(parameters);
+                    Timeout = (int)parameters.GetType().GetProperty("timeout").GetValue(parameters);
                 }
             }
 
@@ -59,8 +64,10 @@ namespace Taxjar
                 throw new ArgumentException("Please provide a TaxJar API key.", nameof(apiToken));
             }
 
-            apiClient = new RestClient(apiUrl);
-            apiClient.UserAgent = GetUserAgent();
+            _apiClient = new RestClient(apiUrl)
+            {
+                UserAgent = GetUserAgent()
+            };
         }
 
         public virtual void SetApiConfig(string key, object value)
@@ -68,7 +75,7 @@ namespace Taxjar
             if (key == "apiUrl")
             {
                 value += "/" + TaxjarConstants.ApiVersion + "/";
-                apiClient = new RestClient(value.ToString());
+                _apiClient = new RestClient(value.ToString());
             }
 
             GetType().GetProperty(key).SetValue(this, value, null);
@@ -85,7 +92,7 @@ namespace Taxjar
             {
                 RequestFormat = DataFormat.Json
             };
-            var includeBody = new[] {Method.POST, Method.PUT, Method.PATCH}.Contains(method);
+            var includeBody = new[] { Method.POST, Method.PUT, Method.PATCH }.Contains(method);
 
             foreach (var header in headers)
             {
@@ -95,7 +102,7 @@ namespace Taxjar
             request.AddHeader("Authorization", "Bearer " + apiToken);
             request.AddHeader("User-Agent", GetUserAgent());
 
-            request.Timeout = timeout;
+            request.Timeout = Timeout;
 
             if (body != null)
             {
@@ -137,7 +144,7 @@ namespace Taxjar
         protected virtual T SendRequest<T>(string endpoint, object body = null, Method httpMethod = Method.POST) where T : new()
         {
             var request = CreateRequest(endpoint, httpMethod, body);
-            var response = apiClient.Execute<T>(request);
+            var response = _apiClient.Execute<T>(request);
 
             if ((int)response.StatusCode >= 400)
             {
@@ -154,10 +161,14 @@ namespace Taxjar
             return JsonConvert.DeserializeObject<T>(response.Content);
         }
 
-        protected virtual async Task<T> SendRequestAsync<T>(string endpoint, object body = null, Method httpMethod = Method.POST) where T : new()
+        protected virtual async Task<T> SendRequestAsync<T>(
+            string endpoint,
+            object body = null,
+            Method httpMethod = Method.POST,
+            CancellationToken cancellationToken = default) where T : new()
         {
             var request = CreateRequest(endpoint, httpMethod, body);
-            var response = await apiClient.ExecuteAsync<T>(request).ConfigureAwait(false);
+            var response = await _apiClient.ExecuteAsync<T>(request, cancellationToken).ConfigureAwait(false);
 
             if ((int)response.StatusCode >= 400)
             {
@@ -268,7 +279,7 @@ namespace Taxjar
             return response.Refund;
         }
 
-        public virtual List<String> ListCustomers(object parameters = null)
+        public virtual List<string> ListCustomers(object parameters = null)
         {
             var response = SendRequest<CustomersResponse>("customers", parameters, Method.GET);
             return response.Customers;
@@ -324,138 +335,138 @@ namespace Taxjar
             return response.SummaryRates;
         }
 
-        public virtual async Task<List<Category>> CategoriesAsync()
+        public virtual async Task<List<Category>> CategoriesAsync(CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<CategoriesResponse>("categories", null, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<CategoriesResponse>("categories", null, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Categories;
         }
 
-        public virtual async Task<RateResponseAttributes> RatesForLocationAsync(string zip, object parameters = null)
+        public virtual async Task<RateResponseAttributes> RatesForLocationAsync(string zip, object parameters = null, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<RateResponse>("rates/" + zip, parameters, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<RateResponse>("rates/" + zip, parameters, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Rate;
         }
 
-        public virtual async Task<TaxResponseAttributes> TaxForOrderAsync(object parameters)
+        public virtual async Task<TaxResponseAttributes> TaxForOrderAsync(object parameters, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<TaxResponse>("taxes", parameters, Method.POST).ConfigureAwait(false);
+            var response = await SendRequestAsync<TaxResponse>("taxes", parameters, Method.POST, cancellationToken).ConfigureAwait(false);
             return response.Tax;
         }
 
-        public virtual async Task<List<string>> ListOrdersAsync(object parameters = null)
+        public virtual async Task<List<string>> ListOrdersAsync(object parameters = null, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<OrdersResponse>("transactions/orders", parameters, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<OrdersResponse>("transactions/orders", parameters, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Orders;
         }
 
-        public virtual async Task<OrderResponseAttributes> ShowOrderAsync(string transactionId, object parameters = null)
+        public virtual async Task<OrderResponseAttributes> ShowOrderAsync(string transactionId, object parameters = null, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Order;
         }
 
-        public virtual async Task<OrderResponseAttributes> CreateOrderAsync(object parameters)
+        public virtual async Task<OrderResponseAttributes> CreateOrderAsync(object parameters, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<OrderResponse> ("transactions/orders", parameters, Method.POST).ConfigureAwait(false);
+            var response = await SendRequestAsync<OrderResponse>("transactions/orders", parameters, Method.POST, cancellationToken).ConfigureAwait(false);
             return response.Order;
         }
 
-        public virtual async Task<OrderResponseAttributes> UpdateOrderAsync(object parameters)
+        public virtual async Task<OrderResponseAttributes> UpdateOrderAsync(object parameters, CancellationToken cancellationToken = default)
         {
             var transactionId = GetTransactionIdFromParameters(parameters);
-            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.PUT).ConfigureAwait(false);
+            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.PUT, cancellationToken).ConfigureAwait(false);
             return response.Order;
         }
 
-        public virtual async Task<OrderResponseAttributes> DeleteOrderAsync(string transactionId, object parameters = null)
+        public virtual async Task<OrderResponseAttributes> DeleteOrderAsync(string transactionId, object parameters = null, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.DELETE).ConfigureAwait(false);
+            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.DELETE, cancellationToken).ConfigureAwait(false);
             return response.Order;
         }
 
-        public virtual async Task<List<string>> ListRefundsAsync(object parameters)
+        public virtual async Task<List<string>> ListRefundsAsync(object parameters, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<RefundsResponse>("transactions/refunds", parameters, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<RefundsResponse>("transactions/refunds", parameters, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Refunds;
         }
 
-        public virtual async Task<RefundResponseAttributes> ShowRefundAsync(string transactionId, object parameters = null)
+        public virtual async Task<RefundResponseAttributes> ShowRefundAsync(string transactionId, object parameters = null, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Refund;
         }
 
-        public virtual async Task<RefundResponseAttributes> CreateRefundAsync(object parameters)
+        public virtual async Task<RefundResponseAttributes> CreateRefundAsync(object parameters, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds", parameters, Method.POST).ConfigureAwait(false);
+            var response = await SendRequestAsync<RefundResponse>("transactions/refunds", parameters, Method.POST, cancellationToken).ConfigureAwait(false);
             return response.Refund;
         }
 
-        public virtual async Task<RefundResponseAttributes> UpdateRefundAsync(object parameters)
+        public virtual async Task<RefundResponseAttributes> UpdateRefundAsync(object parameters, CancellationToken cancellationToken = default)
         {
             var transactionId = GetTransactionIdFromParameters(parameters);
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.PUT).ConfigureAwait(false);
+            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.PUT, cancellationToken).ConfigureAwait(false);
             return response.Refund;
         }
 
-        public virtual async Task<RefundResponseAttributes> DeleteRefundAsync(string transactionId, object parameters = null)
+        public virtual async Task<RefundResponseAttributes> DeleteRefundAsync(string transactionId, object parameters = null, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.DELETE).ConfigureAwait(false);
+            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.DELETE, cancellationToken).ConfigureAwait(false);
             return response.Refund;
         }
 
-        public virtual async Task<List<string>> ListCustomersAsync(object parameters = null)
+        public virtual async Task<List<string>> ListCustomersAsync(object parameters = null, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<CustomersResponse>("customers", parameters, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<CustomersResponse>("customers", parameters, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Customers;
         }
 
-        public virtual async Task<CustomerResponseAttributes> ShowCustomerAsync(string customerId)
+        public virtual async Task<CustomerResponseAttributes> ShowCustomerAsync(string customerId, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Customer;
         }
 
-        public virtual async Task<CustomerResponseAttributes> CreateCustomerAsync(object parameters)
+        public virtual async Task<CustomerResponseAttributes> CreateCustomerAsync(object parameters, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<CustomerResponse>("customers", parameters, Method.POST).ConfigureAwait(false);
+            var response = await SendRequestAsync<CustomerResponse>("customers", parameters, Method.POST, cancellationToken).ConfigureAwait(false);
             return response.Customer;
         }
 
-        public virtual async Task<CustomerResponseAttributes> UpdateCustomerAsync(object parameters)
+        public virtual async Task<CustomerResponseAttributes> UpdateCustomerAsync(object parameters, CancellationToken cancellationToken = default)
         {
             var customerId = GetCustomerIdFromParameters(parameters);
-            var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, parameters, Method.PUT).ConfigureAwait(false);
+            var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, parameters, Method.PUT, cancellationToken).ConfigureAwait(false);
             return response.Customer;
         }
 
-        public virtual async Task<CustomerResponseAttributes> DeleteCustomerAsync(string customerId)
+        public virtual async Task<CustomerResponseAttributes> DeleteCustomerAsync(string customerId, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.DELETE).ConfigureAwait(false);
+            var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.DELETE, cancellationToken).ConfigureAwait(false);
             return response.Customer;
         }
 
-        public virtual async Task<List<NexusRegion>> NexusRegionsAsync()
+        public virtual async Task<List<NexusRegion>> NexusRegionsAsync(CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<NexusRegionsResponse>("nexus/regions", null, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<NexusRegionsResponse>("nexus/regions", null, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Regions;
         }
 
-        public virtual async Task<List<Address>> ValidateAddressAsync(object parameters)
+        public virtual async Task<List<Address>> ValidateAddressAsync(object parameters, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<AddressValidationResponse>("addresses/validate", parameters, Method.POST).ConfigureAwait(false);
+            var response = await SendRequestAsync<AddressValidationResponse>("addresses/validate", parameters, Method.POST, cancellationToken).ConfigureAwait(false);
             return response.Addresses;
         }
 
-        public virtual async Task<ValidationResponseAttributes> ValidateVatAsync(object parameters)
+        public virtual async Task<ValidationResponseAttributes> ValidateVatAsync(object parameters, CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<ValidationResponse>("validation", parameters, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<ValidationResponse>("validation", parameters, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.Validation;
         }
 
-        public virtual async Task<List<SummaryRate>> SummaryRatesAsync()
+        public virtual async Task<List<SummaryRate>> SummaryRatesAsync(CancellationToken cancellationToken = default)
         {
-            var response = await SendRequestAsync<SummaryRatesResponse>("summary_rates", null, Method.GET).ConfigureAwait(false);
+            var response = await SendRequestAsync<SummaryRatesResponse>("summary_rates", null, Method.GET, cancellationToken).ConfigureAwait(false);
             return response.SummaryRates;
         }
 
@@ -492,7 +503,7 @@ namespace Taxjar
 
         private string GetUserAgent()
         {
-            #if NET452
+#if NET452
                 string platform = Environment.OSVersion.VersionString;
                 string arch = Environment.Is64BitOperatingSystem
                     ? "X64"
@@ -500,11 +511,11 @@ namespace Taxjar
                         ? "X86"
                         : "i386";
                 string framework = "net452";
-            #else
-                string platform = RuntimeInformation.OSDescription;
-                string arch = RuntimeInformation.OSArchitecture.ToString();
-                string framework = RuntimeInformation.FrameworkDescription;
-            #endif
+#else
+            string platform = RuntimeInformation.OSDescription;
+            string arch = RuntimeInformation.OSArchitecture.ToString();
+            string framework = RuntimeInformation.FrameworkDescription;
+#endif
 
             string version = GetType().Assembly.GetName().Version.ToString(3);
 
