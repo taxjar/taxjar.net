@@ -16,7 +16,7 @@ namespace Taxjar
         /// <summary>
         /// Milliseconds.
         /// </summary>
-        int Timeout { get; set; }
+        int timeout { get; set; }
 
         List<Category> Categories();
 

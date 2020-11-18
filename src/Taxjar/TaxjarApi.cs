@@ -31,14 +31,14 @@ namespace Taxjar
 
         public IDictionary<string, string> headers { get; set; }
 
-        public int Timeout { get; set; }
+        public int timeout { get; set; }
 
         public TaxjarApi(string token, object parameters = null)
         {
             apiToken = token;
             apiUrl = TaxjarConstants.DefaultApiUrl + "/" + TaxjarConstants.ApiVersion + "/";
             headers = new Dictionary<string, string>();
-            Timeout = 0; // Milliseconds
+            timeout = 0; // Milliseconds
 
             if (parameters != null)
             {
@@ -55,7 +55,7 @@ namespace Taxjar
 
                 if (parameters.GetType().GetProperty("timeout") != null)
                 {
-                    Timeout = (int)parameters.GetType().GetProperty("timeout").GetValue(parameters);
+                    timeout = (int)parameters.GetType().GetProperty("timeout").GetValue(parameters);
                 }
             }
 
@@ -102,7 +102,7 @@ namespace Taxjar
             request.AddHeader("Authorization", "Bearer " + apiToken);
             request.AddHeader("User-Agent", GetUserAgent());
 
-            request.Timeout = Timeout;
+            request.Timeout = timeout;
 
             if (body != null)
             {
