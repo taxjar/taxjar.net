@@ -3,23 +3,26 @@ using System;
 
 namespace Taxjar.Options
 {
+    /// <summary>
+    /// The options for <see cref="ITaxjarApi"/> client.
+    /// </summary>
     public class TaxjarOptions
     {
-
         /// <summary>
         /// Taxjar token.
         /// </summary>
         public string ApiToken { get; set; }
 
         /// <summary>
-        /// Is Sandbox?
+        /// The base url used by <see cref="TaxjarApi"/> client.
         /// </summary>
-        public bool IsSandBox { get; set; }
+        public string ApiUrl { get; set; } = TaxjarConstants.DefaultApiUrl;
+
 
         /// <summary>
-        /// Timeout for the HttpClient.
+        /// Timeout in seconds for the HttpClient.
         /// </summary>
-        public TimeSpan Timeout { get; set; }
+        public int Timeout { get; set; }
     }
 }
 #endif

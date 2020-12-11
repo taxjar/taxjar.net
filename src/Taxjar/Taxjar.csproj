@@ -21,19 +21,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Entities\" />
-    <Folder Include="Infrastructure\" />
-    <Folder Include="Properties\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="RestSharp" Version="106.10.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.10"/>
-    <PackageReference Include="Bet.Extensions.Options" Version="3.1.10"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder " Version="3.1.10"/>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.10" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.10" />
   </ItemGroup>
 
   <ItemGroup Label="SourceLink">
