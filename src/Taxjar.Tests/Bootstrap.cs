@@ -37,14 +37,19 @@ namespace Taxjar.Tests
 
         private static TestOptions GetTestOptions()
         {
-            var json = File.ReadAllText("../../../secrets.json");
-            var options = JsonConvert.DeserializeObject<TestOptions>(json);
-            return options;
+            if (File.Exists("../../../secrets.json"))
+            {
+                var json = File.ReadAllText("../../../secrets.json");
+                var options = JsonConvert.DeserializeObject<TestOptions>(json);
+                return options;
+            }
+
+            return new TestOptions();
         }
 
         private class TestOptions
         {
-            public string ApiToken { get; set; }
+            public string ApiToken { get; set; } = "69c23367-5696-473d-a3e2-2142564cacae";
         }
     }
 }
