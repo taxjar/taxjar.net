@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using RestSharp.Serializers.NewtonsoftJson;
 using Taxjar.Infrastructure;
 using RestRequest = RestSharp.RestRequest;
 
@@ -83,7 +84,7 @@ namespace Taxjar
         {
             var request = new RestRequest(action, method)
             {
-                RequestFormat = DataFormat.Json
+                RequestFormat = DataFormat.Json, JsonSerializer = new JsonNetSerializer()
             };
             var includeBody = new[] {Method.POST, Method.PUT, Method.PATCH}.Contains(method);
 
