@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.3.2] - 2021-10-20
+- Update RestSharp to version 106.12.0
+
 ## [3.3.1] - 2020-11-02
 - Fix async methods when passing a `TransactionId` or `CustomerId` property
 
@@ -97,7 +100,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.0.0] - 2016-09-20
 - Initial release
 
-[Unreleased]: https://github.com/taxjar/taxjar.net/compare/v3.3.1...HEAD
+[Unreleased]: https://github.com/taxjar/taxjar.net/compare/v3.3.2...HEAD
+[3.3.2]: https://github.com/taxjar/taxjar.net/compare/v3.3.1...v3.3.2
 [3.3.1]: https://github.com/taxjar/taxjar.net/compare/v3.3.0...v3.3.1
 [3.3.0]: https://github.com/taxjar/taxjar.net/compare/v3.2.1...v3.3.0
 [3.2.1]: https://github.com/taxjar/taxjar.net/compare/v3.2.0...v3.2.1
