@@ -1,7 +1,5 @@
 # TaxJar Sales Tax API for .NET / C&#35; [![Nuget](https://img.shields.io/nuget/v/taxjar)](https://www.nuget.org/packages/TaxJar/)
 
-<a href="https://developers.taxjar.com"><img src="https://www.taxjar.com/img/TJ_logo_color_office_png.png" alt="TaxJar" width="220"></a>
-
 Official .NET / C# client for the [TaxJar API](https://www.taxjar.com/api/reference/?csharp). For the API documentation, please visit [https://developers.taxjar.com/api](https://developers.taxjar.com/api/reference/?csharp).
 
 <hr>
@@ -874,6 +872,19 @@ var client = new TaxjarApi("[Your TaxJar API Key]", new { apiUrl = "https://api.
 
 // Custom timeout via `SetApiConfig`
 client.SetApiConfig("timeout", 30 * 1000);
+```
+
+### API Version
+```csharp
+// Custom API version when instantiating the client
+var client = new TaxjarApi("[Your TaxJar API Key]", new { apiUrl = "https://api.taxjar.com", headers = new Dictionary<string, string> {
+  { "x-api-version", "2020-08-07" }
+}});
+
+// Custom API version via `SetApiConfig`
+client.SetApiConfig("headers", new Dictionary<string, string> {
+  { "x-api-version", "2020-08-07" }
+});
 ```
 
 ## Sandbox Environment
