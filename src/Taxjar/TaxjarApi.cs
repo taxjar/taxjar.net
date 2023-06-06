@@ -492,19 +492,9 @@ namespace Taxjar
 
         private string GetUserAgent()
         {
-            #if NET452
-                string platform = Environment.OSVersion.VersionString;
-                string arch = Environment.Is64BitOperatingSystem
-                    ? "X64"
-                    : platform.Contains("Win")
-                        ? "X86"
-                        : "i386";
-                string framework = "net452";
-            #else
-                string platform = RuntimeInformation.OSDescription;
-                string arch = RuntimeInformation.OSArchitecture.ToString();
-                string framework = RuntimeInformation.FrameworkDescription;
-            #endif
+            string platform = RuntimeInformation.OSDescription;
+            string arch = RuntimeInformation.OSArchitecture.ToString();
+            string framework = RuntimeInformation.FrameworkDescription;
 
             string version = GetType().Assembly.GetName().Version.ToString(3);
 
