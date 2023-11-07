@@ -166,7 +166,7 @@ namespace Taxjar.Tests
 
             var systemException = Assert.Throws<Exception>(() => Bootstrap.client.Categories());
 
-            Assert.AreEqual("The operation has timed out.", systemException.Message);
+            Assert.AreEqual("A task was canceled.", systemException.Message);
         }
     }
 }
