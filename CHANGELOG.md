@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [4.0.0] - 2023-11-07
+- Update RestSharp to version 108.0.3
+- Update Newtonsoft.Json to version 13.0.3
+- Update target framework to netstandard2.0, and remove net452 as a target framework
+
 ## [3.3.2] - 2021-10-20
 - Update RestSharp to version 106.12.0
 
@@ -100,7 +105,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.0.0] - 2016-09-20
 - Initial release
 
-[Unreleased]: https://github.com/taxjar/taxjar.net/compare/v3.3.2...HEAD
+[Unreleased]: https://github.com/taxjar/taxjar.net/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/taxjar/taxjar.net/compare/v3.3.2...v4.0.0
 [3.3.2]: https://github.com/taxjar/taxjar.net/compare/v3.3.1...v3.3.2
 [3.3.1]: https://github.com/taxjar/taxjar.net/compare/v3.3.0...v3.3.1
 [3.3.0]: https://github.com/taxjar/taxjar.net/compare/v3.2.1...v3.3.0
