@@ -1,70 +1,99 @@
-﻿using Newtonsoft.Json;
-using NUnit.Framework;
-using System.Threading.Tasks;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
+﻿using System.Text.Json;
+using FluentAssertions;
+using NSubstitute;
+using RichardSzalay.MockHttp;
+using Taxjar;
+using Taxjar.Tests;
+using Taxjar.Tests.Infrastructure;
+using Taxjar.Tests.Fixtures;
+using Microsoft.Extensions.Options;
 
-namespace Taxjar.Tests
+namespace TaxJar.Tests;
+
+[TestFixture]
+public class SummarizedRates
 {
-    [TestFixture]
-    public class SummarizedRateTests
+    protected IHttpClientFactory httpClientFactory;
+    protected IOptions<TaxjarApiOptions> options = Substitute.For<IOptions<TaxjarApiOptions>>();
+    protected string apiToken;
+    protected string summaryRatesEndpoint;
+    protected Dictionary<string, string> defaultHeaders;
+
+    [SetUp]
+    public void Init()
     {
-        [Test]
-        public void when_summarizing_tax_rates_for_all_regions()
+        apiToken = TaxjarFakes.Faker.Internet.Password();
+        httpClientFactory = Substitute.For<IHttpClientFactory>();
+        options.Value.Returns(new TaxjarApiOptions
         {
-            var body = JsonConvert.DeserializeObject<SummaryRatesResponse>(TaxjarFixture.GetJSON("summary_rates.json"));
+            JsonSerializerOptions = TaxjarConstants.TaxJarDefaultSerializationOptions,
+            ApiToken = TaxjarFakes.Faker.Internet.Password(),
+            ApiUrl = TaxjarFakes.Faker.Internet.UrlWithPath(protocol: "https", domain: "api.taxjartest.com"),
+            ApiVersion = "v2",
+            UseSandbox = false
+        });
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/summary_rates")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        summaryRatesEndpoint = FormatSummaryRatesEndpoint(options.Value.ApiUrl);
+        defaultHeaders = new Dictionary<string, string>{
+            {"Authorization", $"Bearer {options.Value.ApiToken}" },
+            {"Accept", "application/json"}
+        };
+    }
 
-            var summaryRates = Bootstrap.client.SummaryRates();
+    private static string FormatSummaryRatesEndpoint(string apiUrl) => $"{apiUrl}/{TaxjarConstants.SummaryRatesEndpoint}";
 
-            Assert.AreEqual(3, summaryRates.Count);
-            Assert.AreEqual("US", summaryRates[0].CountryCode);
-            Assert.AreEqual("United States", summaryRates[0].Country);
-            Assert.AreEqual("CA", summaryRates[0].RegionCode);
-            Assert.AreEqual("California", summaryRates[0].Region);
-            Assert.AreEqual("State Tax", summaryRates[0].MinimumRate.Label);
-            Assert.AreEqual(0.065, summaryRates[0].MinimumRate.Rate);
-            Assert.AreEqual("Tax", summaryRates[0].AverageRate.Label);
-            Assert.AreEqual(0.0827, summaryRates[0].AverageRate.Rate);
-        }
+    [Test]
+    public async Task when_summarizing_tax_rates_for_all_regions_async()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("rates/summary_rates.json");
+        var expected = JsonSerializer.Deserialize<SummaryRatesResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var responseBody = JsonSerializer.Serialize(expected!, options.Value.JsonSerializerOptions);
 
-        [Test]
-        public async Task when_summarizing_tax_rates_for_all_regions_async()
-        {
-            var body = JsonConvert.DeserializeObject<SummaryRatesResponse>(TaxjarFixture.GetJSON("summary_rates.json"));
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, summaryRatesEndpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond(TaxjarConstants.ContentType, responseBody);
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/summary_rates")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
 
-            var summaryRates = await Bootstrap.client.SummaryRatesAsync();
+        var sut = new TaxjarApi(httpClientFactory, options);
 
-            Assert.AreEqual(3, summaryRates.Count);
-            Assert.AreEqual("US", summaryRates[0].CountryCode);
-            Assert.AreEqual("United States", summaryRates[0].Country);
-            Assert.AreEqual("CA", summaryRates[0].RegionCode);
-            Assert.AreEqual("California", summaryRates[0].Region);
-            Assert.AreEqual("State Tax", summaryRates[0].MinimumRate.Label);
-            Assert.AreEqual(0.065, summaryRates[0].MinimumRate.Rate);
-            Assert.AreEqual("Tax", summaryRates[0].AverageRate.Label);
-            Assert.AreEqual(0.0827, summaryRates[0].AverageRate.Rate);
-        }
+        //act
+        var result = await sut.SummaryRatesAsync();
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.SummaryRates);
+    }
+
+    [Test]
+    public async Task when_listing_nexus_regions_random_async()
+    {
+        //arrange
+        var expected = TaxjarFakes.FakeSummaryRatesResponse().Generate();
+        var jsonData = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, summaryRatesEndpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond(TaxjarConstants.ContentType, jsonData);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.SummaryRatesAsync();
+
+        //assert
+        result.Should().NotBeNullOrEmpty();
+        result.Should().BeEquivalentTo(expected!.SummaryRates);
     }
 }

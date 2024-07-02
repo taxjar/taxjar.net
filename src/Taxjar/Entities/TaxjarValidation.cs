@@ -1,52 +1,52 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Taxjar
 {
-    public class ValidationResponse
+    public record ValidationResponse
     {
-        [JsonProperty("validation")]
-        public ValidationResponseAttributes Validation { get; set; }
+        [JsonPropertyName("validation")]
+        public ValidationResponseAttributes? Validation { get; set; }
     }
 
-    public class ValidationResponseAttributes
+    public record ValidationResponseAttributes
     {
-        [JsonProperty("valid")]
+        [JsonPropertyName("valid")]
         public bool Valid { get; set; }
 
-        [JsonProperty("exists")]
+        [JsonPropertyName("exists")]
         public bool Exists { get; set; }
 
-        [JsonProperty("vies_available")]
+        [JsonPropertyName("vies_available")]
         public bool ViesAvailable { get; set; }
 
-        [JsonProperty("vies_response")]
-        public ViesResponse ViesResponse { get; set; }
+        [JsonPropertyName("vies_response")]
+        public ViesResponse? ViesResponse { get; set; }
     }
 
-    public class ViesResponse
+    public record ViesResponse
     {
-        [JsonProperty("country_code")]
-        public string CountryCode { get; set; }
+        [JsonPropertyName("country_code")]
+        public string CountryCode { get; set; } = string.Empty;
 
-        [JsonProperty("vat_number")]
-        public string VatNumber { get; set; }
+        [JsonPropertyName("vat_number")]
+        public string VatNumber { get; set; } = string.Empty;
 
-        [JsonProperty("request_date")]
-        public string RequestDate { get; set; }
+        [JsonPropertyName("request_date")]
+        public string RequestDate { get; set; } = string.Empty;
 
-        [JsonProperty("valid")]
+        [JsonPropertyName("valid")]
         public bool Valid { get; set; }
 
-        [JsonProperty("name")]
-        public string Name { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
 
-        [JsonProperty("address")]
-        public string Address { get; set; }
+        [JsonPropertyName("address")]
+        public string Address { get; set; } = string.Empty;
     }
 
-    public class Validation
+    public record Validation
     {
-        [JsonProperty("vat")]
-        public string Vat { get; set; }
+        [JsonPropertyName("vat")]
+        public string Vat { get; set; } = string.Empty;
     }
 }

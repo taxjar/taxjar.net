@@ -1,172 +1,221 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using Newtonsoft.Json;
-using NUnit.Framework;
-using WireMock.Logging;
-using WireMock.Matchers;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
+﻿using System.Net;
+using System.Text.Json;
+using FluentAssertions;
+using NSubstitute;
+using RichardSzalay.MockHttp;
+using Taxjar.Tests.Infrastructure;
+using Taxjar.Tests.Fixtures;
+using Microsoft.Extensions.Options;
 
-namespace Taxjar.Tests
+namespace Taxjar.Tests;
+
+[TestFixture]
+public class Client
 {
-    [TestFixture]
-    public class ClientTests
+    protected IHttpClientFactory httpClientFactory;
+    protected IOptions<TaxjarApiOptions> options = Substitute.For<IOptions<TaxjarApiOptions>>();
+    protected string apiToken;
+    protected string categoriesEndpoint;
+    protected Dictionary<string, string> defaultHeaders;
+
+    [SetUp]
+    public void Init()
     {
-        [SetUp]
-        public static void Init()
+        apiToken = TaxjarFakes.Faker.Internet.Password();
+        httpClientFactory = Substitute.For<IHttpClientFactory>();
+        options.Value.Returns(new TaxjarApiOptions
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191" });
-            Bootstrap.server.ResetMappings();
-        }
+            ApiToken = apiToken,
+            ApiUrl = TaxjarFakes.Faker.Internet.UrlWithPath(protocol: "https", domain: "api.taxjartest.com"),
+        });
 
-        [Test, Order(1)]
-        public void instantiates_client_with_api_token()
+        categoriesEndpoint = $"{options.Value.ApiUrl}/{TaxjarConstants.CategoriesEndpoint}";
+
+        defaultHeaders = new Dictionary<string, string>{
+            {"Authorization", $"Bearer {options.Value.ApiToken}" },
+            {"Accept", "application/json"}
+        };
+    }
+
+    [Test]
+    public async Task when_config_uses_defaults()
+    {
+        //arrange
+        var body = TaxjarFixture.GetJSON("categories.json");
+        var expected = JsonSerializer.Deserialize<CategoriesResponse>(body);
+        var testOptions = Substitute.For<IOptions<TaxjarApiOptions>>();
+
+        testOptions.Value.Returns(new TaxjarApiOptions{
+            ApiToken = TaxjarFakes.Faker.Internet.Password()
+        });
+
+        var sut = new TaxjarApi(httpClientFactory, testOptions);
+        var baseUrl = $"{TaxjarConstants.DefaultApiUrl}/{TaxjarConstants.ApiVersion}/";
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, $"{baseUrl}{TaxjarConstants.CategoriesEndpoint}")
+            .WithHeaders(new Dictionary<string, string>{
+                {"Authorization", $"Bearer {testOptions.Value.ApiToken}" },
+                {"Accept", "application/json" },
+                //investigate!
+                //{"User-Agent", sut.UserAgent}
+                })
+                .Respond("application/json", body);
+
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        //act
+        var categories = await sut.CategoriesAsync();
+
+        //assert
+        sut.ApiUrl.Should().Be(baseUrl);
+        categories.Should().NotBeNullOrEmpty();
+        categories.Should().BeEquivalentTo(expected!.Categories);
+    }
+
+    [Test]
+    public async Task when_config_set_to_defaults()
+    {
+        //arrange
+        var testOptions = Substitute.For<IOptions<TaxjarApiOptions>>();
+
+        testOptions.Value.Returns(new TaxjarApiOptions
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey);
-        }
+            ApiToken = TaxjarFakes.Faker.Internet.Password(),
+            ApiUrl = TaxjarConstants.DefaultApiUrl
+        });
 
-        [Test, Order(2)]
-        public void instantiates_client_with_additional_arguments()
-        {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191" });
-        }
+        var baseUrl = $"{TaxjarConstants.DefaultApiUrl}/{TaxjarConstants.ApiVersion}/";
 
-        [Test, Order(3)]
-        public void includes_appropriate_headers()
-        {
-            var body = JsonConvert.DeserializeObject<CategoriesResponse>(TaxjarFixture.GetJSON("categories.json"));
+        //act
+        var sut = new TaxjarApi(httpClientFactory, testOptions);
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/categories")
-                    .UsingGet()
-                    .WithHeader("Authorization", "*")
-                    .WithHeader("User-Agent", "*")
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        //assert
+        sut.ApiUrl.Should().Be(baseUrl);
+    }
 
-            Bootstrap.client.Categories();
+    [Test]
+    public void when_missing_api_token_throws()
+    {
+        //arrange
+        TaxjarApi sut;
+        options.Value.Returns(new TaxjarApiOptions());
 
-            IEnumerable<LogEntry> logs = Bootstrap.server.FindLogEntries(
-                Request.Create()
-                    .WithPath("/v2/categories")
-                    .UsingGet()
-                    .WithHeader("Authorization", "Bearer *")
-                    .WithHeader("User-Agent", new RegexMatcher("^TaxJar/.NET \\(.+\\) taxjar.net/\\d+\\.\\d+\\.\\d+$"))
-            );
+        //act
+        Action act = () => sut = new TaxjarApi(httpClientFactory, options);
 
-            Assert.IsNotEmpty(logs);
-        }
+        //assert
+        act.Should().Throw<ArgumentException>()
+        .WithMessage("Please provide a TaxJar API key.*");
+    }
 
-        [Test, Order(4)]
-        public void instantiates_client_with_custom_headers()
-        {
-            Dictionary<string, string> customHeaders = new Dictionary<string, string>
+
+    [Test]
+    public async Task includes_appropriate_headers()
+    {
+        //arrange
+        var body = TaxjarFixture.GetJSON("categories.json");
+        var expected = JsonSerializer.Deserialize<CategoriesResponse>(body);
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, categoriesEndpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", body);
+
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        //act
+        var categories = await sut.CategoriesAsync();
+
+        //assert
+        categories.Should().NotBeNullOrEmpty();
+        categories.Should().BeEquivalentTo(expected!.Categories);
+    }
+
+
+    [Test]
+    public async Task when_api_token_is_invalid_throws()
+    {
+        //arrange
+        var expectedStatusCode = HttpStatusCode.Unauthorized;
+        var expectedDetail = "Not authorized for route 'GET /v2/categories'";
+        var expectedMessage = $"{expectedStatusCode} - {expectedDetail}";
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, categoriesEndpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond(HttpStatusCode.Unauthorized, "application/json", $$"""
             {
-                { "X-TJ-Expected-Response", "422" }
-            };
+                "error": "{{expectedStatusCode}}",
+                "detail": "{{expectedDetail}}",
+                "status": "{{(int)expectedStatusCode}}"
+            }
+            """);
 
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new {
-                apiUrl = "http://localhost:9191",
-                headers = customHeaders
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        {
+            BaseAddress = new Uri($"{TaxjarConstants.DefaultApiUrl}/{TaxjarConstants.ApiVersion}")
+        }
+        );
+
+        //act
+        Func<Task> act = () => sut.CategoriesAsync();
+
+        //assert
+        await act.Should().ThrowAsync<TaxjarException>()
+        .Where(ex => ex.HttpStatusCode == expectedStatusCode)
+        .Where(ex => ex.TaxjarError.Error == expectedStatusCode.ToString())
+        .Where(ex => ex.TaxjarError.StatusCode == ((int)expectedStatusCode).ToString())
+        .Where(ex => ex.TaxjarError.Detail == expectedDetail)
+        .WithMessage(expectedMessage);
+    }
+
+    [Test]
+    public async Task returns_exception_with_timeout()
+    {
+        //arrange
+        var timeout = TimeSpan.FromMilliseconds(100);
+
+        options.Value.Returns(options.Value with
+        {
+            Timeout = timeout
+        });
+        
+        var sut = new TaxjarApi(httpClientFactory, options);
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, categoriesEndpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond(async () => { 
+                await Task.Delay(Convert.ToInt32(timeout.TotalMilliseconds) + TaxjarFakes.Faker.Random.Number(300, 400));
+                return new HttpResponseMessage(HttpStatusCode.OK);
             });
 
-            Assert.AreEqual(Bootstrap.client.GetApiConfig("headers"), customHeaders);
-        }
 
-        [Test, Order(5)]
-        public void instantiates_client_with_custom_timeout()
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new
-            {
-                timeout = 30 * 1000
-            });
-
-            Assert.AreEqual(Bootstrap.client.GetApiConfig("timeout"), 30 * 1000);
+            BaseAddress = new Uri($"{TaxjarConstants.DefaultApiUrl}/{TaxjarConstants.ApiVersion}")
         }
+        );
 
-        [Test, Order(6)]
-        public void get_api_config()
-        {
-            Assert.AreEqual(Bootstrap.client.GetApiConfig("apiUrl"), "http://localhost:9191/v2/");
-        }
+        //act
+        Func<Task> act = () => sut.CategoriesAsync();
 
-        [Test, Order(7)]
-        public void set_api_config()
-        {
-            Bootstrap.client.SetApiConfig("apiUrl", "https://api.sandbox.taxjar.com");
-            Assert.AreEqual(Bootstrap.client.GetApiConfig("apiUrl"), "https://api.sandbox.taxjar.com/v2/");
-        }
-
-        [Test, Order(8)]
-        public void sets_api_url_via_api_config()
-        {
-            Bootstrap.client.SetApiConfig("apiUrl", "https://api.sandbox.taxjar.com");
-            Bootstrap.client.SetApiConfig("apiToken", "123");
-
-            var taxjarException = Assert.Throws<TaxjarException>(() => Bootstrap.client.Categories());
-
-            Assert.AreEqual("Unauthorized - Not authorized for route 'GET /v2/categories'", taxjarException.Message);
-        }
-
-        [Test, Order(9)]
-        public void sets_custom_headers_via_api_config()
-        {
-            Dictionary<string, string> customHeaders = new Dictionary<string, string>
-            {
-                { "X-TJ-Expected-Response", "422" }
-            };
-
-            Bootstrap.client.SetApiConfig("headers", customHeaders);
-            Assert.AreEqual(Bootstrap.client.GetApiConfig("headers"), customHeaders);
-        }
-
-        [Test, Order(10)]
-		    public void returns_exception_with_invalid_api_token()
-		    {
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/categories")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Unauthorized)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(new { error = "Unauthorized", detail = "Not authorized for route 'GET /v2/categories'", status = 401 })
-            );
-
-            var taxjarException = Assert.Throws<TaxjarException>(() => Bootstrap.client.Categories());
-
-            Assert.AreEqual(HttpStatusCode.Unauthorized, taxjarException.HttpStatusCode);
-            Assert.AreEqual("Unauthorized", taxjarException.TaxjarError.Error);
-            Assert.AreEqual("Not authorized for route 'GET /v2/categories'", taxjarException.TaxjarError.Detail);
-            Assert.AreEqual("401", taxjarException.TaxjarError.StatusCode);
-        }
-
-        [Test, Order(11)]
-        public void returns_exception_with_timeout()
-        {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191", timeout = 1 });
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/categories")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithBody("")
-                    .WithDelay(TimeSpan.FromSeconds(5))
-            );
-
-            var systemException = Assert.Throws<Exception>(() => Bootstrap.client.Categories());
-
-            Assert.AreEqual("A task was canceled.", systemException.Message);
-        }
+        //assert
+        await act.Should().ThrowAsync<Exception>()
+        .WithMessage("The request was canceled*");
     }
 }

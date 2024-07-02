@@ -29,39 +29,53 @@ Use the NuGet package manager inside Visual Studio, Xamarin Studio, or run the f
 PM> Install-Package TaxJar
 ```
 
+Call `AddTaxJar`:
+   ```csharp
+   public void ConfigureServices(IServiceCollection services)
+   {
+       services.AddTaxJar();
+   }
+   ```
+
+   The optional `setupAction` allows consumers to manually configure the `TaxJarApiOptions` object:
+
+   ```csharp
+   public void ConfigureServices(IServiceCollection services)
+   {
+       services.AddTaxJar(
+           options =>
+           {
+               options.ApiToken = "< Taxjar Api Token >";
+               options.Timeout = TimeSpan.FromMilliseconds(5000);
+           });
+   }
+   ```
+
 ## Package Dependencies
 
-TaxJar.net comes with assemblies for **.NET Standard 2.0**. It requires the following dependencies:
+TaxJar.net comes with assemblies for **.NET 8**. It requires the following dependencies:
 
-- [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) Popular high-performance JSON framework for .NET
-- [RestSharp](https://github.com/restsharp/RestSharp) Simple REST and HTTP API Client for .NET
+- [System.Text.Json](https://www.nuget.org/packages/System.Text.Json) &quot;Provides high-performance and low-allocating types that serialize objects to JavaScript Object Notation (JSON) text and deserialize JSON text to objects, with UTF-8 support built-in.&quot;
+- [Microsoft.Extensions.Options.ConfigurationExtensions](https://www.nuget.org/packages/Microsoft.Extensions.Options.ConfigurationExtensions) &quot;Microsoft.Extensions.Options.ConfigurationExtensions provides additional configuration-specific functionality related to Options.&quot;
+- [Microsoft.Extensions.Http](https://www.nuget.org/packages/Microsoft.Extensions.Http) &quot;Microsoft.Extensions.Http package provides AddHttpClient extension methods for IServiceCollection, IHttpClientFactory interface and its default implementation. This provides the ability to set up named HttpClient configurations in a DI container and later retrieve them via an injected IHttpClientFactory instance.&quot;
 
 These packages are automatically included when installing via [NuGet](https://www.nuget.org/).
 
 ## Authentication
 
-To authenticate with our API, add a new AppSetting with your TaxJar API key to your project's `Web.config` / `App.config` file or directly supply the API key when instantiating the client:
+To authenticate with our API, add a new AppSetting with your TaxJar API key to your project's  `appsettings.json` file:
 
 ### Method A
 
-```xml
-<!-- Web.config / App.config -->
-<appSettings>
+```json
+<!-- appsettings.json -->
+
 ...
-  <add key="TaxjarApiKey" value="[Your TaxJar API Key]" />
+  "Taxjar": {
+    "ApiToken": "< Taxjar Api Token >"
+  }
 ...
-</appSettings>
-```
-```csharp
-var client = new TaxjarApi(ConfigurationManager.AppSettings["TaxjarApiKey"]);
-```
 
-Note: This method requires [System.Configuration.ConfigurationManager](https://docs.microsoft.com/en-us/dotnet/api/system.configuration.configurationmanager?view=netframework-4.5.2) on .NET Framework 4.x. If you'd like to use this method on .NET Standard or Core, reference the [NuGet package](https://www.nuget.org/packages/System.Configuration.ConfigurationManager/) in your project.
-
-### Method B
-
-```csharp
-var client = new TaxjarApi("[Your TaxJar API Key]");
 ```
 
 You're now ready to use TaxJar! [Check out our quickstart guide](https://developers.taxjar.com/api/guides/csharp/#csharp-quickstart) to get up and running quickly.
@@ -96,9 +110,6 @@ You're now ready to use TaxJar! [Check out our quickstart guide](https://develop
 > The TaxJar API provides product-level tax rules for a subset of product categories. These categories are to be used for products that are either exempt from sales tax in some jurisdictions or are taxed at reduced rates. You need not pass in a product tax code for sales tax calculations on product that is fully taxable. Simply leave that parameter out.
 
 ```csharp
-var categories = client.Categories();
-
-// Async Method
 var categories = await client.CategoriesAsync();
 ```
 
@@ -107,81 +118,57 @@ var categories = await client.CategoriesAsync();
 > Shows the sales tax that should be collected for a given order.
 
 ```csharp
-var tax = client.TaxForOrder(new {
-  from_country = "US",
-  from_zip = "07001",
-  from_state = "NJ",
-  from_city = "Avenel",
-  from_street = "305 W Village Dr",
-  to_country = "US",
-  to_zip = "07446",
-  to_state = "NJ",
-  to_city = "Ramsey",
-  to_street = "63 W Main St",
-  amount = 16.50,
-  shipping = 1.50,
-  line_items = new[] {
-    new {
-      id = "1",
-      quantity = 1,
-      product_tax_code = "31000",
-      unit_price = 15,
-      discount = 0
+var tax = await client.TaxForOrderAsync(new () {
+  FromCountry = "US",
+  FromZip = "07001",
+  FromState = "NJ",
+  FromCity = "Avenel",
+  FromCity = "305 W Village Dr",
+  ToCountry = "US",
+  ToZip = "07446",
+  ToState = "NJ",
+  ToCity = "Ramsey",
+  ToStreet = "63 W Main St",
+  Amount = 16.50,
+  Shipping = 1.50,
+  LineItems = new List<LineItem> {
+    new() {
+        Id = "1",
+        Quantity = 1,
+        ProductTaxCode = "31000",
+        UnitPrice = 15.00m,
+        Discount = 0
+      }
     }
-  }
-});
-
-// Async Method
-var tax = await client.TaxForOrderAsync(new {
-  from_country = "US",
-  from_zip = "07001",
-  from_state = "NJ",
-  from_city = "Avenel",
-  from_street = "305 W Village Dr",
-  to_country = "US",
-  to_zip = "07446",
-  to_state = "NJ",
-  to_city = "Ramsey",
-  to_street = "63 W Main St",
-  amount = 16.50,
-  shipping = 1.50,
-  line_items = new[] {
-    new {
-      id = "1",
-      quantity = 1,
-      product_tax_code = "31000",
-      unit_price = 15,
-      discount = 0
-    }
-  }
 });
 
 // Request Entity
-var taxEntity = new Tax {
-  from_country = "US",
-  from_zip = "07001",
-  from_state = "NJ",
-  from_city = "Avenel",
-  from_street = "305 W Village Dr",
-  to_country = "US",
-  to_zip = "07446",
-  to_state = "NJ",
-  to_city = "Ramsey",
-  to_street = "63 W Main St",
-  amount = 16.50,
-  shipping = 1.50,
-  line_items = new[] {
-    new {
-      id = "1",
-      quantity = 1,
+var taxRequestEntity = new TaxjarTaxCalculationRequest {
+  FromCountry = "US",
+  FromZip = "07001",
+  FromState = "NJ",
+  FromCity = "Avenel",
+  FromStreet = "305 W Village Dr",
+  ToCountry = "US",
+  ToZip = "07446",
+  ToState = "NJ",
+  ToCity = "Ramsey",
+  ToStreet = "63 W Main St",
+  Amount = 16.50,
+  Shipping = 1.50,
+  LineItems = new List<TaxLineItem> {
+    new() {
+      Id = "1",
+      ProductIdentifier = "Airstream Deluxe A4",
+      Quantity = 1,
       product_tax_code = "31000",
-      unit_price = 15,
-      discount = 0
+      UnitPrice = 15,
+      Discount = 0
     }
   }
 };
 
-var tax = client.TaxForOrder(taxEntity);
+var tax = await client.TaxForOrderAsync(taxRequestEntity);
 ```
 
 ### List order transactions <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#get-list-order-transactions))_</small>
@@ -189,24 +176,19 @@ var tax = client.TaxForOrder(taxEntity);
 > Lists existing order transactions created through the API.
 
 ```csharp
-var orders = client.ListOrders(new {
-  from_transaction_date = "2015/05/01",
-  to_transaction_date = "2015/05/31"
-});
-
-// Async Method
-var orders = await client.ListOrdersAsync(new {
-  from_transaction_date = "2015/05/01",
-  to_transaction_date = "2015/05/31"
+var orders = await client.ListOrdersAsync(new() {
+  FromTransactionDate = DateTime.Parse("2024/05/01", CultureInfo.CurrentCulture),
+  ToTransactionDate = DateTime.Parse("2024/05/01", CultureInfo.CurrentCulture),
 });
 
 // Request Entity
 var orderFilter = new OrderFilter {
-  FromTransactionDate = "2015/05/01",
-  ToTransactionDate = "2015/05/31"
+  FromTransactionDate = DateTime.Parse("2024/05/01", CultureInfo.CurrentCulture),
+  ToTransactionDate = DateTime.Parse("2024/05/01", CultureInfo.CurrentCulture),
+  ToTransactionDate = DateTime.Parse("2024/15/01", CultureInfo.CurrentCulture),
+  Provider = "api"
 };
 
-var orders = client.ListOrders(orderFilter);
 ```
 
 ### Show order transaction <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#get-show-an-order-transaction))_</small>
@@ -214,9 +196,6 @@ var orders = client.ListOrders(orderFilter);
 > Shows an existing order transaction created through the API.
 
 ```csharp
-var order = client.ShowOrder("123");
-
-// Async Method
 var order = await client.ShowOrderAsync("123");
 ```
 
@@ -225,96 +204,66 @@ var order = await client.ShowOrderAsync("123");
 > Creates a new order transaction.
 
 ```csharp
-var order = client.CreateOrder(new {
-  transaction_id = "123",
-  transaction_date = "2015/05/04",
-  from_country = "US",
-  from_zip = "92093",
-  from_state = "CA",
-  from_city = "La Jolla",
-  from_street = "9500 Gilman Drive",
-  to_country = "US",
-  to_zip = "90002",
-  to_state = "CA",
-  to_city = "Los Angeles",
-  to_street = "123 Palm Grove Ln",
-  amount = 17,
-  shipping = 2,
-  sales_tax = 0.95,
-  line_items = new[] {
+var order = await client.CreateOrderAsync(new() {
+  TransactionId = "123",
+  TransactionDate = DateTime.Parse("2015/05/04", CultureInfo.CurrentCulture),
+  FromCountry = "US",
+  FromZip = "92093",
+  FromState = "CA",
+  FromCity = "La Jolla",
+  FromStreet = "9500 Gilman Drive",
+  ToCountry = "US",
+  ToZip = "90002",
+  ToState = "CA",
+  ToCity = "Los Angeles",
+  ToStreet = "123 Palm Grove Ln",
+  Amount = 17,
+  Shipping = 2,
+  SalesTax = 0.95,
+  LineItems = new List<LineItem> {
     new {
-      id = "1",
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = 15,
-      discount = 0,
-      sales_tax = 0.95
-    }
-  }
-});
-
-// Async Method
-var order = await client.CreateOrderAsync(new {
-  transaction_id = "123",
-  transaction_date = "2015/05/04",
-  from_country = "US",
-  from_zip = "92093",
-  from_state = "CA",
-  from_city = "La Jolla",
-  from_street = "9500 Gilman Drive",
-  to_country = "US",
-  to_zip = "90002",
-  to_state = "CA",
-  to_city = "Los Angeles",
-  to_street = "123 Palm Grove Ln",
-  amount = 17,
-  shipping = 2,
-  sales_tax = 0.95,
-  line_items = new[] {
-    new {
-      id = "1",
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = 15,
-      discount = 0,
-      sales_tax = 0.95
+      Id = "1",
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = 15,
+      Discount = 0,
+      SalesTax = 0.95
     }
   }
 });
 
 // Request Entity
-var orderEntity = new Order {
-  transaction_id = "123",
-  transaction_date = "2015/05/04",
-  from_country = "US",
-  from_zip = "92093",
-  from_state = "CA",
-  from_city = "La Jolla",
-  from_street = "9500 Gilman Drive",
-  to_country = "US",
-  to_zip = "90002",
-  to_state = "CA",
-  to_city = "Los Angeles",
-  to_street = "123 Palm Grove Ln",
-  amount = 17,
-  shipping = 2,
-  sales_tax = 0.95,
-  line_items = new[] {
+var orderRequestEntity = new TaxjarOrderRequest {
+  TransactionId = "123",
+  TransactionDate = DateTime.Parse("2024/15/01", CultureInfo.CurrentCulture),
+  FromCountry = "US",
+  FromZip = "92093",
+  FromState = "CA",
+  FromCity = "La Jolla",
+  FromStreet = "9500 Gilman Drive",
+  ToCountry = "US",
+  ToZip = "90002",
+  ToState = "CA",
+  ToCity = "Los Angeles",
+  ToStreet = "123 Palm Grove Ln",
+  Amount = 17,
+  Shipping = 2,
+  SalesTax = 0.95,
+  LineItems = new List<LineItem> {
     new {
-      id = "1",
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = 15,
-      discount = 0,
-      sales_tax = 0.95
+      Id = "1",
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = 15,
+      Discount = 0,
+      SalesTax = 0.95
     }
   }
 };
 
-var order = client.CreateOrder(orderEntity);
+var order = client.CreateOrderAsync(orderRequestEntity);
 ```
 
 ### Update order transaction <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#put-update-an-order-transaction))_</small>
@@ -322,41 +271,24 @@ var order = client.CreateOrder(orderEntity);
 > Updates an existing order transaction created through the API.
 
 ```csharp
-var order = client.UpdateOrder(new {
-  transaction_id = "123",
-  amount = 17,
-  shipping = 2,
-  line_items = new[] {
+var order = await client.UpdateOrderAsync(new() {
+  TransactionId = "123",
+  Amount = 17,
+  Shipping = 2,
+  LineItems = new List<LineItem> {
     new {
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = 15,
-      discount = 0,
-      sales_tax = 0.95
-    }
-  }
-});
-
-// Async Method
-var order = await client.UpdateOrderAsync(new {
-  transaction_id = "123",
-  amount = 17,
-  shipping = 2,
-  line_items = new[] {
-    new {
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = 15,
-      discount = 0,
-      sales_tax = 0.95
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = 15,
+      Discount = 0,
+      SalesTax = 0.95
     }
   }
 });
 
 // Request Entity
-var orderEntity = new Order {
+var orderRequestEntity = new TaxjarOrderRequest {
   TransactionId = "123",
   Amount = 17,
   Shipping = 2,
@@ -372,7 +304,7 @@ var orderEntity = new Order {
   }
 };
 
-var order = client.UpdateOrder(orderEntity);
+var order = await client.UpdateOrderAsync(orderRequestEntity);
 ```
 
 ### Delete order transaction <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#delete-delete-an-order-transaction))_</small>
@@ -380,9 +312,6 @@ var order = client.UpdateOrder(orderEntity);
 > Deletes an existing order transaction created through the API.
 
 ```csharp
-var order = client.DeleteOrder("123");
-
-// Async Method
 var order = await client.DeleteOrderAsync("123");
 ```
 
@@ -391,24 +320,20 @@ var order = await client.DeleteOrderAsync("123");
 > Lists existing refund transactions created through the API.
 
 ```csharp
-var refunds = client.ListRefunds(new {
-  from_transaction_date = "2015/05/01",
-  to_transaction_date = "2015/05/31"
-});
-
-// Async Method
 var refunds = await client.ListRefundsAsync(new {
-  from_transaction_date = "2015/05/01",
-  to_transaction_date = "2015/05/31"
+  FromTransactionDate =  DateTime.Parse("2015/05/01", CultureInfo.CurrentCulture),
+  ToTransactionDate =  DateTime.Parse("2015/05/31", CultureInfo.CurrentCulture)
 });
 
 // Request Entity
 var refundFilter = new RefundFilter {
-  FromTransactionDate = "2015/05/01",
-  ToTransactionDate = "2015/05/31"
+  FromTransactionDate = DateTime.Parse("2024/05/01", CultureInfo.CurrentCulture),
+  ToTransactionDate = DateTime.Parse("2024/05/01", CultureInfo.CurrentCulture),
+  ToTransactionDate = DateTime.Parse("2024/15/01", CultureInfo.CurrentCulture),
+  Provider = "api"
 };
 
-var refunds = client.ListRefunds(refundFilter);
+var refunds = await client.ListRefundsAsync(refundFilter);
 ```
 
 ### Show refund transaction <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#get-show-a-refund-transaction))_</small>
@@ -427,99 +352,68 @@ var refund = await client.ShowRefundAsync("123-refund");
 > Creates a new refund transaction.
 
 ```csharp
-var refund = client.CreateRefund(new {
-  transaction_id = "123-refund",
+var refund = await client.CreateRefundAsync(new() {
+  TransactionId = "123-refund",
   transaction_reference_id = "123",
-  transaction_date = "2015/05/04",
-  from_country = "US",
-  from_zip = "92093",
-  from_state = "CA",
-  from_city = "La Jolla",
-  from_street = "9500 Gilman Drive",
-  to_country = "US",
-  to_zip = "90002",
-  to_state = "CA",
-  to_city = "Los Angeles",
-  to_street = "123 Palm Grove Ln",
-  amount = -17,
-  shipping = -2,
-  sales_tax = -0.95,
-  line_items = new[] {
-    new {
-      id = "1",
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = -15,
-      discount = -0,
-      sales_tax = -0.95
-    }
-  }
-});
-
-// Async Method
-var refund = await client.CreateRefundAsync(new {
-  transaction_id = "123-refund",
-  transaction_reference_id = "123",
-  transaction_date = "2015/05/04",
-  from_country = "US",
-  from_zip = "92093",
-  from_state = "CA",
-  from_city = "La Jolla",
-  from_street = "9500 Gilman Drive",
-  to_country = "US",
-  to_zip = "90002",
-  to_state = "CA",
-  to_city = "Los Angeles",
-  to_street = "123 Palm Grove Ln",
-  amount = -17,
-  shipping = -2,
-  sales_tax = -0.95,
-  line_items = new[] {
-    new {
-      id = "1",
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = -15,
-      discount = -0,
-      sales_tax = -0.95
+  TransactionDate = DateTime.Parse("2015/05/04", CultureInfo.CurrentCulture),
+  FromCountry = "US",
+  FromZip = "92093",
+  FromState = "CA",
+  FromCity = "La Jolla",
+  FromStreet = "9500 Gilman Drive",
+  ToCountry = "US",
+  ToZip = "90002",
+  ToState = "CA",
+  ToCity = "Los Angeles",
+  ToStreet = "123 Palm Grove Ln",
+  Amount = -17,
+  Shipping = -2,
+  SalesTax = -0.95m,
+  LineItems = new List<LineItem> {
+    new() {
+      Id = "1",
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = -15,
+      Discount = -0,
+      SalesTax = -0.95m
     }
   }
 });
 
 // Request Entity
-var refundEntity = new Refund {
-  transaction_id = "123-refund",
-  transaction_reference_id = "123",
-  transaction_date = "2015/05/04",
-  from_country = "US",
-  from_zip = "92093",
-  from_state = "CA",
-  from_city = "La Jolla",
-  from_street = "9500 Gilman Drive",
-  to_country = "US",
-  to_zip = "90002",
-  to_state = "CA",
-  to_city = "Los Angeles",
-  to_street = "123 Palm Grove Ln",
-  amount = -17,
-  shipping = -2,
-  sales_tax = -0.95,
-  line_items = new[] {
+var refundRequestEntity = new TaxjarRefundRequest {
+  TransactionId = "123-refund",
+  TransactionReferenceId = "123",
+  TransactionDate = DateTime.Parse("2015/05/04", CultureInfo.CurrentCulture),
+  FromCountry = "US",
+  FromZip = "92093",
+  FromState = "CA",
+  FromCity = "La Jolla",
+  FromStreet = "9500 Gilman Drive",
+  ToCountry = "US",
+  ToZip = "90002",
+  ToState = "CA",
+  ToCity = "Los Angeles",
+  ToStreet = "123 Palm Grove Ln",
+  Amount = -17,
+  Shipping = -2,
+  SalesTax = -0.95m,
+  LineItems = new List<LineItem> {
     new {
-      id = "1",
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = -15,
-      discount = -0,
-      sales_tax = -0.95
+      Id = "1",
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = -15,
+      Discount = -0,
+      SalesTax = -0.95m
     }
   }
 };
 
-var refund = client.CreateRefund(refundEntity);
+var refund = await client.CreateRefundAsync(refundRequestEntity);
 ```
 
 ### Update refund transaction <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#put-update-a-refund-transaction))_</small>
@@ -527,63 +421,44 @@ var refund = client.CreateRefund(refundEntity);
 > Updates an existing refund transaction created through the API.
 
 ```csharp
-var refund = client.UpdateRefund(new {
-  transaction_id = "123-refund",
-  transaction_reference_id = "123",
-  amount = -17,
-  shipping = -2,
-  line_items = new[] {
-    new {
-      id = "1",
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = -15,
-      discount = -0,
-      sales_tax = -0.95
-    }
-  }
-});
-
-// Async Method
-var refund = await client.UpdateRefundAsync(new {
-  transaction_id = "123-refund",
-  transaction_reference_id = "123",
-  amount = -17,
-  shipping = -2,
-  line_items = new[] {
-    new {
-      id = "1",
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = -15,
-      discount = -0,
-      sales_tax = -0.95
+var refund = await client.UpdateRefundAsync(new() {
+  TransactionId = "123-refund",
+  TransactionReferenceId = "123",
+  Amount = -17,
+  Shipping = -2,
+  LineItems = new List<LineItem> {
+    new() {
+      Id = "1",
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = -15,
+      Discount = -0,
+      SalesTax = -0.95m
     }
   }
 });
 
 // Request Entity
-var refundEntity = new Refund {
-  transaction_id = "123-refund",
-  transaction_reference_id = "123",
-  amount = -17,
-  shipping = -2,
-  line_items = new[] {
-    new {
-      id = "1",
-      quantity = 1,
-      product_identifier = "12-34243-0",
-      description = "Heavy Widget",
-      unit_price = -15,
-      discount = -0,
-      sales_tax = -0.95
+var refundRequestEntity = new TaxjarRefundRequest {
+  TransactionId = "123-refund",
+  TransactionReferenceId = "123",
+  Amount = -17,
+  Shipping = -2,
+  LineItems = new List<LineItem> {
+    new() {
+      Id = "1",
+      Quantity = 1,
+      ProductIdentifier = "12-34243-0",
+      Description = "Heavy Widget",
+      UnitPrice = -15,
+      Discount = -0,
+      SalesTax = -0.95m
     }
   }
 };
 
-var refund = client.UpdateRefund(refundEntity);
+var refund = await client.UpdateRefundAsync(refundRequestEntity);
 ```
 
 ### Delete refund transaction <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#delete-delete-a-refund-transaction))_</small>
@@ -591,9 +466,6 @@ var refund = client.UpdateRefund(refundEntity);
 > Deletes an existing refund transaction created through the API.
 
 ```csharp
-var refund = client.DeleteRefund("123-refund");
-
-// Async Method
 var refund = await client.DeleteRefundAsync("123-refund");
 ```
 
@@ -602,9 +474,6 @@ var refund = await client.DeleteRefundAsync("123-refund");
 > Lists existing customers created through the API.
 
 ```csharp
-var customers = client.ListCustomers();
-
-// Async Method
 var customers = await client.ListCustomersAsync();
 ```
 
@@ -613,9 +482,6 @@ var customers = await client.ListCustomersAsync();
 > Shows an existing customer created through the API.
 
 ```csharp
-var customer = client.ShowCustomer("123");
-
-// Async Method
 var customer = await client.ShowCustomerAsync("123");
 ```
 
@@ -624,51 +490,29 @@ var customer = await client.ShowCustomerAsync("123");
 > Creates a new customer.
 
 ```csharp
-var customer = client.CreateCustomer(new {
-  customer_id = "123",
-  exemption_type = "wholesale",
-  name = "Dunder Mifflin Paper Company",
-  exempt_regions = new[] {
-    new {
-      country = "US",
-      state = "FL"
+var customer = await client.CreateCustomerAsync(new() {
+  CustomerId = "123",
+  ExemptionType = "wholesale",
+  Name = "Dunder Mifflin Paper Company",
+  ExemptRegions = new() {
+    new() {
+      Country = "US",
+      State = "FL"
     },
-    new {
-      country = "US",
-      state = "PA"
+    new() {
+      Country = "US",
+      State = "PA"
     }
   },
-  country = "US",
-  state = "PA",
-  zip = "18504",
-  city = "Scranton",
-  street = "1725 Slough Avenue"
-});
-
-// Async Method
-var customer = await client.CreateCustomerAsync(new {
-  customer_id = "123",
-  exemption_type = "wholesale",
-  name = "Dunder Mifflin Paper Company",
-  exempt_regions = new[] {
-    new {
-      country = "US",
-      state = "FL"
-    },
-    new {
-      country = "US",
-      state = "PA"
-    }
-  },
-  country = "US",
-  state = "PA",
-  zip = "18504",
-  city = "Scranton",
-  street = "1725 Slough Avenue"
+  Country = "US",
+  State = "PA",
+  Zip = "18504",
+  City = "Scranton",
+  Street = "1725 Slough Avenue"
 });
 
 // Request Entity
-var customerEntity = new Customer {
+var customerRequestEntity = new Customer {
   CustomerId = "123",
   ExemptionType = "wholesale",
   Name = "Dunder Mifflin Paper Company",
@@ -689,7 +533,7 @@ var customerEntity = new Customer {
   Street = "1725 Slough Avenue"
 };
 
-var customer = client.CreateCustomer(customerEntity);
+var customer = await client.CreateCustomerAsync(customerRequestEntity);
 ```
 
 ### Update customer <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#put-update-a-customer))_</small>
@@ -697,43 +541,27 @@ var customer = client.CreateCustomer(customerEntity);
 > Updates an existing customer created through the API.
 
 ```csharp
-var customer = client.UpdateCustomer(new {
-  customer_id = "123",
-  exemption_type = "wholesale",
-  name = "Sterling Cooper",
-  exempt_regions = new[] {
-    new {
-      country = "US",
-      state = "NY"
-    }
-  },
-  country = "US",
-  state = "NY",
-  zip = "10010",
-  city = "New York",
-  street = "405 Madison Ave"
-});
 
 // Async Method
-var customer = await client.UpdateCustomerAsync(new {
-  customer_id = "123",
-  exemption_type = "wholesale",
-  name = "Sterling Cooper",
-  exempt_regions = new[] {
-    new {
-      country = "US",
-      state = "NY"
+var customer = await client.UpdateCustomerAsync(new() {
+  CustomerId = "123",
+  ExemptionType = "wholesale",
+  Name = "Sterling Cooper",
+  ExemptRegions = new() {
+    new() {
+      Country = "US",
+      State = "NY"
     }
   },
-  country = "US",
-  state = "NY",
-  zip = "10010",
-  city = "New York",
-  street = "405 Madison Ave"
+  Country = "US",
+  State = "NY",
+  Zip = "10010",
+  City = "New York",
+  Street = "405 Madison Ave"
 });
 
 // Request Entity
-var customerEntity = new Customer {
+var customerRequestEntity = new Customer {
   CustomerId = "123",
   ExemptionType = "wholesale",
   Name = "Sterling Cooper",
@@ -750,7 +578,7 @@ var customerEntity = new Customer {
   Street = "405 Madison Ave"
 };
 
-var customer = client.UpdateCustomer(customerEntity);
+var customer = client.UpdateCustomer(customerRequestEntity);
 ```
 
 ### Delete customer <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#delete-delete-a-customer))_</small>
@@ -758,9 +586,6 @@ var customer = client.UpdateCustomer(customerEntity);
 > Deletes an existing customer created through the API.
 
 ```csharp
-var customer = client.DeleteCustomer("123");
-
-// Async Method
 var customer = await client.DeleteCustomerAsync("123");
 ```
 
@@ -771,24 +596,21 @@ var customer = await client.DeleteCustomerAsync("123");
 > **Please note this method only returns the full combined rate for a given location.** It does not support nexus determination, sourcing based on a ship from and ship to address, shipping taxability, product exemptions, customer exemptions, or sales tax holidays. We recommend using [`TaxForOrder` to accurately calculate sales tax for an order](#calculate-sales-tax-for-an-order-api-docs).
 
 ```csharp
-var rates = client.RatesForLocation("90002", new {
-  city = "LOS ANGELES",
-  country = "US"
-});
-
-// Async Method
 var rates = await client.RatesForLocationAsync("90002", new {
-  city = "LOS ANGELES",
-  country = "US"
+  City = "LOS ANGELES",
+  Country = "US"
 });
 
 // Request Entity
 var rateEntity = new Rate {
   City = "LOS ANGELES",
-  Country = "US"
+  State = "CA",
+  Zip = "90002",
+  Country = "US",
+  Street = "1001 Stadium Dr,"
 };
 
-var rates = client.RatesForLocation("90002", rateEntity);
+var rates = client.RatesForLocationAsync("90002", rateEntity);
 ```
 
 ### List nexus regions <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#get-list-nexus-regions))_</small>
@@ -796,9 +618,6 @@ var rates = client.RatesForLocation("90002", rateEntity);
 > Lists existing nexus locations for a TaxJar account.
 
 ```csharp
-var nexusRegions = client.NexusRegions();
-
-// Async Method
 var nexusRegions = await client.NexusRegionsAsync();
 ```
 
@@ -807,21 +626,12 @@ var nexusRegions = await client.NexusRegionsAsync();
 > Validates a customer address and returns back a collection of address matches. **Address validation requires a [TaxJar Plus](https://www.taxjar.com/plus/) subscription.**
 
 ```csharp
-var addresses = client.ValidateAddress(new {
-  country = "US",
-  state = "AZ",
-  zip = "85297",
-  city = "Gilbert",
-  street = "3301 South Greenfield Rd"
-});
-
-// Async Method
 var addresses = client.ValidateAddressAsync(new {
-  country = "US",
-  state = "AZ",
-  zip = "85297",
-  city = "Gilbert",
-  street = "3301 South Greenfield Rd"
+  Country = "US",
+  State = "AZ",
+  Zip = "85297",
+  City = "Gilbert",
+  Street = "3301 South Greenfield Rd"
 });
 ```
 
@@ -830,11 +640,6 @@ var addresses = client.ValidateAddressAsync(new {
 > Validates an existing VAT identification number against [VIES](http://ec.europa.eu/taxation_customs/vies/).
 
 ```csharp
-var validation = client.ValidateVat(new {
-  vat = "FR40303265045"
-});
-
-// Async Method
 var validation = await client.ValidateVatAsync(new {
   vat = "FR40303265045"
 });
@@ -844,7 +649,7 @@ var vatEntity = new Validation {
   Vat = "FR40303265045"
 };
 
-var validation = client.ValidateVat(vatEntity);
+var validation = await client.ValidateVatAsync(vatEntity);
 ```
 
 ### Summarize tax rates for all regions <small>_([API docs](https://developers.taxjar.com/api/reference/?csharp#get-summarize-tax-rates-for-all-regions))_</small>
@@ -854,89 +659,119 @@ var validation = client.ValidateVat(vatEntity);
 > This method is useful for periodically pulling down rates to use if the TaxJar API is unavailable. However, it does not support nexus determination, sourcing based on a ship from and ship to address, shipping taxability, product exemptions, customer exemptions, or sales tax holidays. We recommend using [`TaxForOrder` to accurately calculate sales tax for an order](#calculate-sales-tax-for-an-order-api-docs).
 
 ```csharp
-var summaryRates = client.SummaryRates();
-
-// Async Method
 var summaryRates = await client.SummaryRatesAsync();
 ```
 
 ## Custom Options
 
-You can pass additional options using `SetApiConfig` or when instantiating the client for the following:
+You can pass additional options using `setupAction` when calling `AddTaxJar` when adding to the services collections as following:
 
 ### Timeouts
 
 ```csharp
-// Custom timeout when instantiating the client
-var client = new TaxjarApi("[Your TaxJar API Key]", new { apiUrl = "https://api.taxjar.com", timeout = 30 * 1000 });
-
-// Custom timeout via `SetApiConfig`
-client.SetApiConfig("timeout", 30 * 1000);
+   public void ConfigureServices(IServiceCollection services)
+   {
+       services.AddTaxJar(
+           options =>
+           {
+               options.ApiToken = "< Taxjar Api Token >";
+               options.Timeout = TimeSpan.FromMilliseconds(5000);
+           });
+   }
 ```
 
 ### API Version
-```csharp
-// Custom API version when instantiating the client
-var client = new TaxjarApi("[Your TaxJar API Key]", new { apiUrl = "https://api.taxjar.com", headers = new Dictionary<string, string> {
-  { "x-api-version", "2020-08-07" }
-}});
 
-// Custom API version via `SetApiConfig`
-client.SetApiConfig("headers", new Dictionary<string, string> {
-  { "x-api-version", "2020-08-07" }
-});
-```
+   ```csharp
+   public void ConfigureServices(IServiceCollection services)
+   {
+       services.AddTaxJar(
+           options =>
+           {
+            ...
+               options.Headers =  new Dictionary<string, string> {
+              { "x-api-version", "2020-08-07" }
+            };
+            ...
+           });
+   }
+
+   // Custom API version via Headers property
+   client.Headers.Add( "x-api-version", "2020-08-07");
+  ```
 
 ## Sandbox Environment
 
 You can easily configure the client to use the [TaxJar Sandbox](https://developers.taxjar.com/api/reference/?csharp#sandbox-environment):
 
-```csharp
-var client = new TaxjarApi("[Your TaxJar Sandbox API Key]", new { apiUrl = "https://api.sandbox.taxjar.com" });
-```
+   ```csharp
+   public void ConfigureServices(IServiceCollection services)
+   {
+       services.AddTaxJar(
+           options =>
+           {
+            ...
+               options.UseSandbox = true;
+            ...
+           });
+   }
+  ```
 
 For testing specific [error response codes](https://developers.taxjar.com/api/reference/?csharp#errors), pass the custom `X-TJ-Expected-Response` header:
 
-```csharp
-client.SetApiConfig("headers", new Dictionary<string, string> {
-  { "X-TJ-Expected-Response", "422" }
-});
-```
+   ```csharp
+   public void ConfigureServices(IServiceCollection services)
+   {
+       services.AddTaxJar(
+           options =>
+           {
+            ...
+               options.Headers =  new Dictionary<string, string> {
+              { "X-TJ-Expected-Response", "422" }
+            };
+            ...
+           });
+   } 
+
+    //error response codes via Headers property
+   client.Headers.Add( "X-TJ-Expected-Response", "422");
+
+    //remove error response codes via Headers property
+    client.Headers.Remove( "X-TJ-Expected-Response");
+  ```
 
 ## Error Handling
 
 When invalid data is sent to TaxJar or we encounter an error, we’ll throw a `TaxjarException` with the HTTP status code and error message. To catch these exceptions, refer to the example below. [Click here](https://developers.taxjar.com/api/guides/csharp/#error-handling) for a list of common error response classes.
 
 ```csharp
-using Taxjar;
-var client = new TaxjarApi();
-
+...
 try
 {
   // Invalid request
   var order = client.CreateOrder(new {
-    transaction_date = "2015/05/04",
-    from_country = "US",
-    from_zip = "07001",
-    from_state = "NJ",
-    from_city = "Avenel",
-    from_street = "305 W Village Dr",
-    to_country = "US",
-    to_zip = "90002",
-    to_state = "CA",
-    to_city = "Ramsey",
-    to_street = "63 W Main St",
-    amount = 17.45,
-    shipping = 1.5,
-    sales_tax = 0.95
-    line_items = new[] {
+    TransactionDate = DateTime.Parse("2015/05/04", CultureInfo.CurrentCulture),,
+    FromCountry = "US",
+    FromZip = "07001",
+    FromState = "NJ",
+    FromCity = "Avenel",
+    FromStreet = "305 W Village Dr",
+    ToCountry = "US",
+    ToZip = "90002",
+    ToState = "CA",
+    ToCity = "Ramsey",
+    ToStreet = "63 W Main St",
+    Amount = 17.45,
+    Shipping = 1.5,
+    SalesTax = 0.95
+    LineItems = new List<LineItem> {
       new {
-        id = "1",
-        quantity = 1,
+        Id = "1",
+        Quantity = 1,
         product_tax_code = "31000",
-        unit_price = 15,
-        discount = 0,
-        sales_tax = 0.95
+        UnitPrice = 15,
+        Discount = 0,
+        SalesTax = 0.95
       }
     }
   });
@@ -948,16 +783,18 @@ catch(TaxjarException e)
   e.TaxjarError.Detail;
   e.TaxjarError.StatusCode;
 }
+...
 ```
 
 ## Tests
 
-We use [NUnit](https://github.com/nunit/nunit) and [WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) for testing. Before running the specs, create a `secrets.json` file inside the `Taxjar.Tests` directory with your sandbox API Token:
+We use [NUnit](https://github.com/nunit/nunit), [fluentassertions](https://fluentassertions.com/),  [Bogus](https://github.com/bchavez/Bogus), [NSubstitute](https://nsubstitute.github.io/), [RichardSzalay.MockHttp](https://github.com/richardszalay/mockhttp) and [Microsoft.Extensions.Configuration.UserSecrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-8.0&tabs=windows) for testing. Before running the specs, create a [`secrets.json`](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-8.0&tabs=windows). If using vscode you can install the .NET Core User Secrets extension.
 
 ```
-{
-  "ApiToken": "YOUR_SANDBOX_KEY"
-}
+    "Taxjar":
+    {
+        "ApiToken":"< Taxjar Api Token >"
+    }
 ```
 
 ## More Information

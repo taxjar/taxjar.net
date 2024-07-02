@@ -1,41 +1,64 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Taxjar
 {
-    public class SummaryRatesResponse
+    ///<summary>
+    ///List of summarized rates for each region/state
+    ///</summary>
+    public record SummaryRatesResponse
     {
-        [JsonProperty("summary_rates")]
-        public List<SummaryRate> SummaryRates { get; set; }
+
+        [JsonPropertyName("summary_rates")]
+        public List<SummaryRate> SummaryRates { get; set; } = new List<SummaryRate>();
     }
 
-    public class SummaryRate
+    public record SummaryRate
     {
-        [JsonProperty("country_code")]
-        public string CountryCode { get; set; }
+        ///<summary>
+        ///Region code for summarized region.
+        ///</summary>
+        [JsonPropertyName("country_code")]
+        public string CountryCode { get; set; } = string.Empty;
 
-        [JsonProperty("country")]
-        public string Country { get; set; }
+        ///<summary>
+        ///Country name for summarized region.
+        ///</summary>
+        [JsonPropertyName("country")]
+        public string Country { get; set; } = string.Empty;
 
-        [JsonProperty("region_code")]
-        public string RegionCode { get; set; }
+        ///<summary>
+        ///Region code for summarized region.
+        ///</summary>
+        [JsonPropertyName("region_code")]
+        public string RegionCode { get; set; } = string.Empty;
 
-        [JsonProperty("region")]
-        public string Region { get; set; }
+        ///<summary>
+        ///Region name for summarized region.
+        ///</summary>
+        [JsonPropertyName("region")]
+        public string Region { get; set; } = string.Empty;
 
-        [JsonProperty("minimum_rate")]
-        public SummaryRateObject MinimumRate { get; set; }
+        ///<summary>
+        ///Region/state-only sales tax rate with label.
+        ///</summary>
+        [JsonPropertyName("minimum_rate")]
+        public SummaryRateObject? MinimumRate { get; set; }
 
-        [JsonProperty("average_rate")]
-        public SummaryRateObject AverageRate { get; set; }
+        ///<summary>
+        ///Average rate for region/state and local sales tax across all postal codes in the summarized region with label.
+        ///</summary>
+        [JsonPropertyName("average_rate")]
+        public SummaryRateObject? AverageRate { get; set; }
     }
 
-    public class SummaryRateObject
+    public record SummaryRateObject
     {
-        [JsonProperty("label")]
-        public string Label { get; set; }
 
-        [JsonProperty("rate")]
+        [JsonPropertyName("label")]
+        public string Label { get; set; } = string.Empty;
+
+        [JsonPropertyName("rate")]
         public decimal Rate { get; set; }
     }
 }

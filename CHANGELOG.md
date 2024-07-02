@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [5.0.0] - 2024-06-27
+- Replaced RestSharp with Microsoft.Extensions.Http
+- Replaced Newtonsoft.Json with System.Text.Json
+- Added ITaxjarApi interface
+- Refactor tests
+- Remove synchronous methods
+- Update target framework to netstandard2.1
+
 ## [4.0.0] - 2023-11-07
 - Update RestSharp to version 108.0.3
 - Update Newtonsoft.Json to version 13.0.3

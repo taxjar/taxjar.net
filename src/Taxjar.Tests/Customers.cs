@@ -1,375 +1,232 @@
-using Newtonsoft.Json;
-using NUnit.Framework;
-using System;
-using System.Net;
-using System.Threading.Tasks;
-using Taxjar.Infrastructure;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
+﻿using System.Text.Json;
+using FluentAssertions;
+using NSubstitute;
+using RichardSzalay.MockHttp;
+using Taxjar.Tests.Infrastructure;
+using TaxJar.Tests;
+using Taxjar.Tests.Fixtures;
+using Microsoft.Extensions.Options;
 
-namespace Taxjar.Tests
+namespace Taxjar.Tests;
+
+[TestFixture]
+public class Customers
 {
-    [TestFixture]
-    public class CustomersTests
+    protected IHttpClientFactory httpClientFactory;
+    protected IOptions<TaxjarApiOptions> options = Substitute.For<IOptions<TaxjarApiOptions>>();
+    protected string apiToken;
+    protected string customersEndpoint;
+    protected Dictionary<string, string> defaultHeaders;
+
+    [SetUp]
+    public void Init()
     {
-        [SetUp]
-        public void Init()
+        apiToken = TaxjarFakes.Faker.Internet.Password();
+        httpClientFactory = Substitute.For<IHttpClientFactory>();
+        options.Value.Returns(new TaxjarApiOptions
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191" });
-            Bootstrap.server.ResetMappings();
-        }
+            JsonSerializerOptions = TaxjarConstants.TaxJarDefaultSerializationOptions,
+            ApiToken = TaxjarFakes.Faker.Internet.Password(),
+            ApiUrl = TaxjarFakes.Faker.Internet.UrlWithPath(protocol: "https", domain: "api.taxjartest.com"),
+            ApiVersion = "v2",
+            UseSandbox = false
+        });
 
-        public void AssertCustomer(CustomerResponseAttributes customer)
+        customersEndpoint = FormatCustomersEndpoint(options.Value.ApiUrl);
+        defaultHeaders = new Dictionary<string, string>{
+            {"Authorization", $"Bearer {options.Value.ApiToken}" },
+            {"Accept", "application/json"}
+        };
+    }
+
+    private static string FormatCustomersEndpoint(string apiUrl) => $"{apiUrl}/{TaxjarConstants.CustomersEndpoint}";
+
+    [Test]
+    public async Task when_listing_customers_async()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("customers/list.json");
+        var expected = JsonSerializer.Deserialize<CustomersResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var responseBody = JsonSerializer.Serialize(expected!, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, customersEndpoint)
+            .Respond(TaxjarConstants.ContentType, responseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var customers = await sut.ListCustomersAsync();
+
+        //assert
+        customers.Should().NotBeNullOrEmpty();
+        customers.Should().BeEquivalentTo(expected!.Customers);
+    }
+
+
+    [Test]
+    public async Task when_showing_a_customer_async()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("customers/show.json");
+        var expected = JsonSerializer.Deserialize<CustomerResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var customerId = expected!.Customer!.CustomerId;
+        var showCustomerEndpoint = $"{customersEndpoint}/{customerId}";
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, showCustomerEndpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonData);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.ShowCustomerAsync(customerId);
+
+        //assert
+        result.Should().NotBeNull();
+        result!.Should().BeEquivalentTo(expected!.Customer);
+    }
+
+    [Test]
+    public async Task when_creating_a_customer_async()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("customers/show.json");
+        var expected = JsonSerializer.Deserialize<CustomerResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var jsonPayload = JsonSerializer.Serialize(expected!.Customer, options.Value.JsonSerializerOptions);
+        var responseBody = JsonSerializer.Serialize(expected!.Customer, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Post, customersEndpoint)
+            .WithHeaders(defaultHeaders)
+            .WithContent(jsonPayload)
+            .Respond("application/json", responseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
         {
-            Assert.AreEqual("123", customer.CustomerId);
-            Assert.AreEqual("wholesale", customer.ExemptionType);
-            Assert.AreEqual("US", customer.ExemptRegions[0].Country);
-            Assert.AreEqual("FL", customer.ExemptRegions[0].State);
-            Assert.AreEqual("US", customer.ExemptRegions[1].Country);
-            Assert.AreEqual("PA", customer.ExemptRegions[1].State);
-            Assert.AreEqual("Dunder Mifflin Paper Company", customer.Name);
-            Assert.AreEqual("US", customer.Country);
-            Assert.AreEqual("PA", customer.State);
-            Assert.AreEqual("18504", customer.Zip);
-            Assert.AreEqual("Scranton", customer.City);
-            Assert.AreEqual("1725 Slough Avenue", customer.Street);
+            BaseAddress = new Uri($"{TaxjarConstants.DefaultApiUrl}/{TaxjarConstants.ApiVersion}")
         }
+        );
 
-        [Test]
-        public void when_listing_customers()
+        var sut = new TaxjarApi(httpClientFactory, options);
+        var request = new TaxjarCustomerRequest {
+            CustomerId = expected.Customer!.CustomerId,
+            ExemptionType = expected.Customer!.ExemptionType,
+            Name = expected.Customer!.Name,
+            ExemptRegions = expected.Customer!.ExemptRegions,
+            Country = expected.Customer!.Country,
+            State = expected.Customer!.State,
+            Zip = expected.Customer!.Zip,
+            City = expected.Customer!.City,
+            Street = expected.Customer!.Street
+        };
+
+        //act
+        var result = await sut.CreateCustomerAsync(request);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Customer);
+    }
+
+
+    [Test]
+    public async Task when_updating_a_customer_async()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("customers/show.json");
+        var expected = JsonSerializer.Deserialize<CustomerResponse>(jsonData);
+        var customerId = expected!.Customer!.CustomerId;
+        var jsonPayload = JsonSerializer.Serialize(expected!.Customer, options.Value.JsonSerializerOptions);
+        var updateCustomerEndpoint = $"{customersEndpoint}/{customerId}";
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Put, updateCustomerEndpoint)
+            .WithHeaders(defaultHeaders)
+            .WithContent(jsonPayload)
+            .Respond("application/json", jsonPayload);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+        var request = new TaxjarCustomerRequest
         {
-            var body = JsonConvert.DeserializeObject<CustomersResponse>(TaxjarFixture.GetJSON("customers/list.json"));
+            CustomerId = expected.Customer!.CustomerId,
+            ExemptionType = expected.Customer!.ExemptionType,
+            Name = expected.Customer!.Name,
+            ExemptRegions = expected.Customer!.ExemptRegions,
+            Country = expected.Customer!.Country,
+            State = expected.Customer!.State,
+            Zip = expected.Customer!.Zip,
+            City = expected.Customer!.City,
+            Street = expected.Customer!.Street
+        };
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        //act
+        var result = await sut.UpdateCustomerAsync(request);
 
-            var customers = Bootstrap.client.ListCustomers();
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Customer);
+    }
 
-            Assert.AreEqual("123", customers[0]);
-            Assert.AreEqual("456", customers[1]);
-        }
+    [TestCaseSource(typeof(TaxjarTestCaseData), nameof(TaxjarTestCaseData.CustomerTestCases))]
+    public async Task when_updating_a_customer_with_missing_customer_data((TaxjarCustomerRequest customer, string expectedMessage) testCase)
+    {   
+        //arrange
+        var sut = new TaxjarApi(httpClientFactory, options);
 
-        [Test]
-        public async Task when_listing_customers_async()
-        {
-            var body = JsonConvert.DeserializeObject<CustomersResponse>(TaxjarFixture.GetJSON("customers/list.json"));
+        //act
+        Func<Task> act = async () => await sut.UpdateCustomerAsync(testCase.customer);
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        //assert
+        await act.Should().ThrowAsync<ArgumentException>()
+         .WithMessage(testCase.expectedMessage);
+    }
 
-            var customers = await Bootstrap.client.ListCustomersAsync();
+    [Test]
+    public async Task when_deleting_a_customer_async()
+    {
+        //arrange
+        var expected = TaxjarFakes.FakeCustomerResponse().Generate();
+        var customerId = expected.Customer!.CustomerId;
+        var jsonData = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
 
-            Assert.AreEqual("123", customers[0]);
-            Assert.AreEqual("456", customers[1]);
-        }
+        var deleteCustomerEndpoint = $"{customersEndpoint}/{customerId}";
 
-        [Test]
-        public void when_showing_a_customer()
-        {
-            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Delete, deleteCustomerEndpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonData);
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers/123")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
 
-            var customer = Bootstrap.client.ShowCustomer("123");
-            AssertCustomer(customer);
-        }
+        var sut = new TaxjarApi(httpClientFactory, options);
 
-        [Test]
-        public async Task when_showing_a_customer_async()
-        {
-            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
+        //act
+        var result = await sut.DeleteCustomerAsync(customerId);
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers/123")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var customer = await Bootstrap.client.ShowCustomerAsync("123");
-            AssertCustomer(customer);
-        }
-
-        [Test]
-        public void when_creating_a_customer()
-        {
-            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers")
-                    .UsingPost()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Created)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var customer = Bootstrap.client.CreateCustomer(new
-            {
-                customer_id = "123",
-                exemption_type = "wholesale",
-                name = "Dunder Mifflin Paper Company",
-                exempt_regions = new[] {
-                    new {
-                      country = "US",
-                      state = "FL"
-                    },
-                    new {
-                      country = "US",
-                      state = "PA"
-                    }
-                },
-                country = "US",
-                state = "PA",
-                zip = "18504",
-                city = "Scranton",
-                street = "1725 Slough Avenue"
-            });
-
-            AssertCustomer(customer);
-        }
-
-        [Test]
-        public async Task when_creating_a_customer_async()
-        {
-            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers")
-                    .UsingPost()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Created)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var customer = await Bootstrap.client.CreateCustomerAsync(new
-            {
-                customer_id = "123",
-                exemption_type = "wholesale",
-                name = "Dunder Mifflin Paper Company",
-                exempt_regions = new[] {
-                    new {
-                      country = "US",
-                      state = "FL"
-                    },
-                    new {
-                      country = "US",
-                      state = "PA"
-                    }
-                },
-                country = "US",
-                state = "PA",
-                zip = "18504",
-                city = "Scranton",
-                street = "1725 Slough Avenue"
-            });
-
-            AssertCustomer(customer);
-        }
-
-        [Test]
-        public void when_updating_a_customer()
-        {
-            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers/123")
-                    .UsingPut()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var customer = Bootstrap.client.UpdateCustomer(new
-            {
-                customer_id = "123",
-                exemption_type = "wholesale",
-                name = "Sterling Cooper",
-                exempt_regions = new[] {
-                    new {
-                      country = "US",
-                      state = "NY"
-                    }
-                },
-                country = "US",
-                state = "NY",
-                zip = "10010",
-                city = "New York",
-                street = "405 Madison Ave"
-            });
-
-            AssertCustomer(customer);
-        }
-
-        [Test]
-        public async Task when_updating_a_customer_async()
-        {
-            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers/123")
-                    .UsingPut()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            // verify customer_id
-            var customer = await Bootstrap.client.UpdateCustomerAsync(new
-            {
-                customer_id = "123",
-                exemption_type = "wholesale",
-                name = "Sterling Cooper",
-                exempt_regions = new[] {
-                    new {
-                      country = "US",
-                      state = "NY"
-                    }
-                },
-                country = "US",
-                state = "NY",
-                zip = "10010",
-                city = "New York",
-                street = "405 Madison Ave"
-            });
-
-            AssertCustomer(customer);
-
-            // verify CustomerId
-            customer = await Bootstrap.client.UpdateCustomerAsync(new
-            {
-                CustomerId = "123",
-                exemption_type = "wholesale",
-                name = "Sterling Cooper",
-                exempt_regions = new[] {
-                    new {
-                        country = "US",
-                        state = "NY"
-                    }
-                },
-                country = "US",
-                state = "NY",
-                zip = "10010",
-                city = "New York",
-                street = "405 Madison Ave"
-            });
-
-            AssertCustomer(customer);
-        }
-
-        [Test]
-        public void when_updating_a_customer_with_missing_customer_id()
-        {
-            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers/123")
-                    .UsingPut()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithBodyAsJson(body)
-            );
-
-            var systemException = Assert.Throws<ArgumentException>(() => Bootstrap.client.UpdateCustomer(new
-            {
-                exemption_type = "wholesale",
-                name = "Sterling Cooper",
-                exempt_regions = new[] {
-                    new {
-                      country = "US",
-                      state = "NY"
-                    }
-                },
-                country = "US",
-                state = "NY",
-                zip = "10010",
-                city = "New York",
-                street = "405 Madison Ave"
-            }));
-
-            Assert.AreEqual(ErrorMessage.MissingCustomerId, systemException.Message);
-        }
-
-        [Test]
-        public void when_deleting_a_customer()
-        {
-            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers/123")
-                    .UsingDelete()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var customer = Bootstrap.client.DeleteCustomer("123");
-            AssertCustomer(customer);
-        }
-
-        [Test]
-        public async Task when_deleting_a_customer_async()
-        {
-            var body = JsonConvert.DeserializeObject<CustomerResponse>(TaxjarFixture.GetJSON("customers/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/customers/123")
-                    .UsingDelete()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var customer = await Bootstrap.client.DeleteCustomerAsync("123");
-            AssertCustomer(customer);
-        }
+        //assert
+        result.Should().NotBeNull();
+        result!.Should().BeEquivalentTo(expected.Customer!);
+        result!.CustomerId.Should().Be(customerId);
     }
 }

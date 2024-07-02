@@ -1,88 +1,88 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Taxjar
 {
-    public class RateResponse
+    public record RateResponse
     {
-        [JsonProperty("rate")]
-        public RateResponseAttributes Rate { get; set; }
+        [JsonPropertyName("rate")]
+        public RateResponseAttributes? Rate { get; set; }
     }
 
-    public class RateResponseAttributes
+    public record RateResponseAttributes
     {
-        [JsonProperty("zip")]
-        public string Zip { get; set; }
+        [JsonPropertyName("zip")]
+        public string Zip { get; set; } = string.Empty;
 
-        [JsonProperty("state")]
-        public string State { get; set; }
+        [JsonPropertyName("state")]
+        public string State { get; set; } = string.Empty;
 
-        [JsonProperty("state_rate")]
+        [JsonPropertyName("state_rate")]
         public decimal StateRate { get; set; }
 
-        [JsonProperty("county")]
-        public string County { get; set; }
+        [JsonPropertyName("county")]
+        public string County { get; set; } = string.Empty;
 
-        [JsonProperty("county_rate")]
+        [JsonPropertyName("county_rate")]
         public decimal CountyRate { get; set; }
 
-        [JsonProperty("city")]
-        public string City { get; set; }
+        [JsonPropertyName("city")]
+        public string City { get; set; } = string.Empty;
 
-        [JsonProperty("city_rate")]
+        [JsonPropertyName("city_rate")]
         public decimal CityRate { get; set; }
 
-        [JsonProperty("combined_district_rate")]
+        [JsonPropertyName("combined_district_rate")]
         public decimal CombinedDistrictRate { get; set; }
 
-        [JsonProperty("combined_rate")]
+        [JsonPropertyName("combined_rate")]
         public decimal CombinedRate { get; set; }
 
-        [JsonProperty("freight_taxable")]
+        [JsonPropertyName("freight_taxable")]
         public bool FreightTaxable { get; set; }
 
         // International
-        [JsonProperty("country")]
-        public string Country { get; set; }
+        [JsonPropertyName("country")]
+        public string Country { get; set; } = string.Empty;
 
-        [JsonProperty("name")]
-        public string Name { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
 
         // Australia / SST States
-        [JsonProperty("country_rate")]
+        [JsonPropertyName("country_rate")]
         public decimal CountryRate { get; set; }
 
         // European Union
-        [JsonProperty("standard_rate")]
+        [JsonPropertyName("standard_rate")]
         public decimal StandardRate { get; set; }
 
-        [JsonProperty("reduced_rate", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("reduced_rate")]
         public decimal ReducedRate { get; set; }
 
-        [JsonProperty("super_reduced_rate", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("super_reduced_rate")]
         public decimal SuperReducedRate { get; set; }
 
-        [JsonProperty("parking_rate", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("parking_rate")]
         public decimal ParkingRate { get; set; }
 
-        [JsonProperty("distance_sale_threshold", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("distance_sale_threshold")]
         public decimal DistanceSaleThreshold { get; set; }
     }
 
-    public class Rate
+    public record Rate
     {
-        [JsonProperty("country")]
-        public string Country { get; set; }
+        [JsonPropertyName("country")]
+        public string Country { get; set; } = string.Empty;
 
-        [JsonProperty("zip")]
-        public string Zip { get; set; }
+        [JsonPropertyName("zip")]
+        public string Zip { get; set; } = string.Empty;
 
-        [JsonProperty("state")]
-        public string State { get; set; }
+        [JsonPropertyName("state")]
+        public string State { get; set; } = string.Empty;
 
-        [JsonProperty("city")]
-        public string City { get; set; }
+        [JsonPropertyName("city")]
+        public string City { get; set; } = string.Empty;
 
-        [JsonProperty("street")]
-        public string Street { get; set; }
+        [JsonPropertyName("street")]
+        public string Street { get; set; } = string.Empty;
     }
 }

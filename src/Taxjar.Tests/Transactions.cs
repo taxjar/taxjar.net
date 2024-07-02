@@ -1,803 +1,625 @@
-using Newtonsoft.Json;
-using NUnit.Framework;
-using System;
-using System.Net;
-using System.Threading.Tasks;
-using Taxjar.Infrastructure;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
+﻿using System.Text.Json;
+using FluentAssertions;
+using NSubstitute;
+using RichardSzalay.MockHttp;
+using Taxjar;
+using Taxjar.Tests.Infrastructure;
+using Taxjar.Tests.Fixtures;
+using Microsoft.Extensions.Options;
 
-namespace Taxjar.Tests
+namespace TaxJar.Tests;
+
+public class Transactions
 {
-    [TestFixture]
-    public class TransactionsTests
+    protected IHttpClientFactory httpClientFactory;
+    protected IOptions<TaxjarApiOptions> options = Substitute.For<IOptions<TaxjarApiOptions>>();
+    protected string apiToken;
+    protected string transactionOrdersEndpoint;
+    protected string refundOrdersEndpoint;
+    protected Dictionary<string, string> defaultHeaders;
+
+    [SetUp]
+    public void Init()
     {
-        [SetUp]
-        public void Init()
+        apiToken = TaxjarFakes.Faker.Internet.Password();
+        httpClientFactory = Substitute.For<IHttpClientFactory>();
+        options.Value.Returns(new TaxjarApiOptions
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191" });
-            Bootstrap.server.ResetMappings();
-        }
+            JsonSerializerOptions = TaxjarConstants.TaxJarDefaultSerializationOptions,
+            ApiToken = TaxjarFakes.Faker.Internet.Password(),
+            ApiUrl = TaxjarFakes.Faker.Internet.UrlWithPath(protocol: "https", domain: "api.taxjartest.com"),
+            ApiVersion = "v2",
+            UseSandbox = false
+        });
 
-        public void AssertOrder(OrderResponseAttributes order)
+        transactionOrdersEndpoint = $"{options.Value.ApiUrl}/{TaxjarConstants.TransactionOrdersEndpoint}";
+        refundOrdersEndpoint = $"{options.Value.ApiUrl}/{TaxjarConstants.TransactionRefundsEndpoint}";
+
+        defaultHeaders = new Dictionary<string, string>{
+            {"Authorization", $"Bearer {options.Value.ApiToken}" },
+            {"Accept", "application/json"}
+        };
+    }
+        
+    [Test]
+    public async Task when_listing_order_transactions_by_transaction_date_async()
+    {
+        //arrange
+        var taxJarOrderFilter = new OrderFilter{
+            TransactionDate = TaxjarFakes.Faker.Date.Past(1),           
+        };
+
+        var expected = TaxjarFakes.FakeOrdersResponse().Generate();        
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, transactionOrdersEndpoint)
+            .WithQueryString($"transaction_date={taxJarOrderFilter.TransactionDate:yyyy/MM/dd}")
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.ListOrdersAsync(taxJarOrderFilter);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected.Orders);
+    }
+
+    [Test]
+    public async Task when_listing_order_transactions_by_date_range_async()
+    {
+        //arrange
+        var taxJarOrderFilter = new OrderFilter
         {
-            Assert.AreEqual("123", order.TransactionId);
-            Assert.AreEqual(10649, order.UserId);
-            Assert.AreEqual("2015-05-14T00:00:00Z", order.TransactionDate);
-            Assert.AreEqual("api", order.Provider);
-            Assert.AreEqual("non_exempt", order.ExemptionType);
-            Assert.AreEqual("US", order.ToCountry);
-            Assert.AreEqual("90002", order.ToZip);
-            Assert.AreEqual("CA", order.ToState);
-            Assert.AreEqual("LOS ANGELES", order.ToCity);
-            Assert.AreEqual("123 Palm Grove Ln", order.ToStreet);
-            Assert.AreEqual(17.95, order.Amount);
-            Assert.AreEqual(2, order.Shipping);
-            Assert.AreEqual(0.95, order.SalesTax);
-            Assert.AreEqual("1", order.LineItems[0].Id);
-            Assert.AreEqual(1, order.LineItems[0].Quantity);
-            Assert.AreEqual("12-34243-0", order.LineItems[0].ProductIdentifier);
-            Assert.AreEqual("Heavy Widget", order.LineItems[0].Description);
-            Assert.AreEqual("20010", order.LineItems[0].ProductTaxCode);
-            Assert.AreEqual(15, order.LineItems[0].UnitPrice);
-            Assert.AreEqual(0, order.LineItems[0].Discount);
-            Assert.AreEqual(0.95, order.LineItems[0].SalesTax);
-        }
+            FromTransactionDate = TaxjarFakes.Faker.Date.Past(1),
+            ToTransactionDate = DateTime.UtcNow
+        };
 
-        public void AssertDeletedOrder(OrderResponseAttributes order)
+        var expected = TaxjarFakes.FakeOrdersResponse().Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, transactionOrdersEndpoint)
+            .WithQueryString($"from_transaction_date={taxJarOrderFilter.FromTransactionDate:yyyy/MM/dd}&to_transaction_date={taxJarOrderFilter.ToTransactionDate:yyyy/MM/dd}")
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.ListOrdersAsync(taxJarOrderFilter);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected.Orders);
+    }
+
+    [Test]
+    public async Task when_listing_order_transactions_by_provider_async()
+    {
+        //arrange
+        var taxJarOrderFilter = new OrderFilter
         {
-            Assert.AreEqual("123", order.TransactionId);
-            Assert.AreEqual(null, order.TransactionDate);
-            Assert.AreEqual("api", order.Provider);
-            Assert.AreEqual(null, order.ExemptionType);
-            Assert.AreEqual(0, order.Amount);
-            Assert.AreEqual(0, order.Shipping);
-            Assert.AreEqual(0, order.SalesTax);
-        }
+            Provider = "api"
+        };
 
-        public void AssertRefund(RefundResponseAttributes refund)
+        var expected = TaxjarFakes.FakeOrdersResponse().Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, transactionOrdersEndpoint)
+            .WithQueryString($"provider={taxJarOrderFilter.Provider}")
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.ListOrdersAsync(taxJarOrderFilter);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected.Orders);
+    }
+
+    [Test]
+    public async Task when_showing_an_order_transaction_async()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("orders/show.json");
+
+        var expected = JsonSerializer.Deserialize<OrderResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var expectedTransactionId = expected!.Order!.TransactionId;
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+        var endpoint = $"{transactionOrdersEndpoint}/{expectedTransactionId}";
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Get, endpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.ShowOrderAsync(expectedTransactionId);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected.Order);
+    }
+
+    [Test]
+    public async Task when_showing_an_order_transaction_with_provider_async()
+    {
+        //arrange
+        var expected = TaxjarFakes.FakeOrderResponse().Generate();
+       
+        var expectedTransactionId = expected!.Order!.TransactionId;
+        var expectedProvider = expected!.Order!.Provider;
+
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+        var endpoint = $"{transactionOrdersEndpoint}/{expectedTransactionId}?provider={expectedProvider}";
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Get, endpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.ShowOrderAsync(expectedTransactionId, expectedProvider);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected.Order);
+    }
+
+    [Test]
+    public async Task when_showing_an_order_without_transaction_throws_async()
+    {
+        //arrange
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        Func<Task> act = async () => await sut.ShowOrderAsync(string.Empty);
+
+        //assert
+        await act.Should().ThrowAsync<ArgumentException>()
+        .WithMessage("*Transaction ID cannot be null or an empty string.*");
+    }
+
+
+
+    [Test]
+    public async Task when_creating_an_order_transaction_with_line_items_async()
+    {
+        //arrange
+        var request = TaxjarFakes.FakeTaxjarCreateOrderRequest(generateLineItems: true, generateCustomerId: true).Generate();
+        var jsonRequestBody = JsonSerializer.Serialize(request, options.Value.JsonSerializerOptions);
+
+        var expected = TaxjarFakes.FakeOrderResponse(generateLineItems: true).Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Post, transactionOrdersEndpoint)
+            .WithHeaders(defaultHeaders)
+            .WithContent(jsonRequestBody)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.CreateOrderAsync(request);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Order);
+    }
+
+    [Test]
+    public async Task when_creating_an_order_transaction_async()
+    {
+        //arrange
+        var request = TaxjarFakes.FakeTaxjarCreateOrderRequest().Generate();
+        var jsonRequestBody = JsonSerializer.Serialize(request, options.Value.JsonSerializerOptions);
+
+        var jsonData = TaxjarFixture.GetJSON("orders/show.json");
+        var expected = JsonSerializer.Deserialize<OrderResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Post, transactionOrdersEndpoint)
+            .WithHeaders(defaultHeaders)
+            .WithContent(jsonRequestBody)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.CreateOrderAsync(request);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Order);
+    }
+
+    [TestCaseSource(typeof(TaxjarTestCaseData), nameof(TaxjarTestCaseData.TaxjarCreateOrderRequestTestCases))]
+    public async Task when_creating_an_order_transaction_with_missing_required_throws_async((TaxjarOrderRequest taxjarCreateOrderRequest, string expectedMessage) testCase)
+    {
+        //arrange
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        Func<Task> act = async () => await sut.CreateOrderAsync(testCase.taxjarCreateOrderRequest);
+
+        //assert
+        await act.Should().ThrowAsync<ArgumentException>()
+         .WithMessage(testCase.expectedMessage);
+    }
+
+    [Test]
+    public async Task when_updating_an_order_transaction_async()
+    {
+        //arrange
+        var request = TaxjarFakes.FakeTaxjarCreateOrderRequest(generateLineItems: true, generateCustomerId: true).Generate();
+        var jsonRequestBody = JsonSerializer.Serialize(request, options.Value.JsonSerializerOptions);
+
+        var expected = TaxjarFakes.FakeOrderResponse(generateLineItems: true).Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var endpoint = $"{transactionOrdersEndpoint}/{request.TransactionId}";
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Put, endpoint)
+            .WithHeaders(defaultHeaders)
+            .WithContent(jsonRequestBody)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.UpdateOrderAsync(request);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Order);
+    }
+
+    [Test]
+    public async Task when_updating_an_order_transaction_throws_async()
+    {
+        //arrange
+        var request = TaxjarFakes.FakeTaxjarCreateOrderRequest().Generate() with { TransactionId = string.Empty};
+        var sut = new TaxjarApi(httpClientFactory, options);
+        var expectedMessage = $"Invalid TaxjarOrderRequest.*TransactionId*";
+
+        //act
+        Func<Task> act = async () => await sut.CreateOrderAsync(request);
+
+        //assert
+        await act.Should().ThrowAsync<ArgumentException>()
+         .WithMessage(expectedMessage);
+    }
+
+    [Test]
+    public async Task when_deleting_an_order_transaction_async()
+    {
+        //arrange
+        var deleteResponse = TaxjarFakes.FakeDeleteOrderResponse().Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(deleteResponse, options.Value.JsonSerializerOptions);
+        var transactionId = deleteResponse!.Order!.TransactionId;
+
+        var expected = JsonSerializer.Deserialize<OrderResponse>(jsonResponseBody, options.Value.JsonSerializerOptions);
+
+        var endpoint = $"{transactionOrdersEndpoint}/{transactionId}";
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Delete, endpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.DeleteOrderAsync(transactionId);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Order);
+    }
+
+    [Test]
+    public async Task when_deleting_an_order_transaction_by_provider_async()
+    {
+        //arrange
+        var deleteResponse = TaxjarFakes.FakeDeleteOrderResponse().Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(deleteResponse, options.Value.JsonSerializerOptions);
+        var transactionId = deleteResponse!.Order!.TransactionId;
+        var provider = TaxjarFakes.Faker.Random.AlphaNumeric(7);
+        
+        var expected = JsonSerializer.Deserialize<OrderResponse>(jsonResponseBody, options.Value.JsonSerializerOptions);
+
+        var endpoint = $"{transactionOrdersEndpoint}/{transactionId}";
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Delete, endpoint)
+            .WithQueryString($"provider={provider}")
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.DeleteOrderAsync(transactionId, provider);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Order);
+    }
+
+    [Test]
+    public async Task when_deleting_an_order_transaction_with_missing_transaction_id_throws_async()
+    {
+        //arrange
+        var transactionId = string.Empty;
+        var sut = new TaxjarApi(httpClientFactory, options);
+        var expectedMessage = "*Transaction ID cannot be null or an empty string*";
+
+        //act
+        Func<Task> act = async () => await sut.DeleteOrderAsync(transactionId);
+
+        //assert
+        await act.Should().ThrowAsync<ArgumentException>()
+         .WithMessage(expectedMessage);
+    }
+
+    [Test]
+    public async Task when_listing_refund_transactions_by_transaction_date_async()
+    {
+        //arrange
+        var taxJarOrderFilter = new RefundFilter
         {
-            Assert.AreEqual("321", refund.TransactionId);
-            Assert.AreEqual("123", refund.TransactionReferenceId);
-            Assert.AreEqual(10649, refund.UserId);
-            Assert.AreEqual("2015-05-14T00:00:00Z", refund.TransactionDate);
-            Assert.AreEqual("api", refund.Provider);
-            Assert.AreEqual("non_exempt", refund.ExemptionType);
-            Assert.AreEqual("US", refund.ToCountry);
-            Assert.AreEqual("90002", refund.ToZip);
-            Assert.AreEqual("CA", refund.ToState);
-            Assert.AreEqual("LOS ANGELES", refund.ToCity);
-            Assert.AreEqual("123 Palm Grove Ln", refund.ToStreet);
-            Assert.AreEqual(17.95, refund.Amount);
-            Assert.AreEqual(2, refund.Shipping);
-            Assert.AreEqual(0.95, refund.SalesTax);
-            Assert.AreEqual("1", refund.LineItems[0].Id);
-            Assert.AreEqual(1, refund.LineItems[0].Quantity);
-            Assert.AreEqual("12-34243-0", refund.LineItems[0].ProductIdentifier);
-            Assert.AreEqual("Heavy Widget", refund.LineItems[0].Description);
-            Assert.AreEqual("20010", refund.LineItems[0].ProductTaxCode);
-            Assert.AreEqual(15, refund.LineItems[0].UnitPrice);
-            Assert.AreEqual(0, refund.LineItems[0].Discount);
-            Assert.AreEqual(0.95, refund.LineItems[0].SalesTax);
-        }
+            TransactionDate = TaxjarFakes.Faker.Date.Past(1),
+        };
 
-        public void AssertDeletedRefund(RefundResponseAttributes refund)
+        var expected = TaxjarFakes.FakeRefundsResponse().Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, refundOrdersEndpoint)
+            .WithQueryString($"transaction_date={taxJarOrderFilter.TransactionDate:yyyy/MM/dd}")
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.ListRefundsAsync(taxJarOrderFilter);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected.Refunds);
+    }
+
+    [Test]
+    public async Task when_listing_refund_transactions_by_date_range_async()
+    {
+        //arrange
+        var taxJarRefundFilter = new RefundFilter
         {
-            Assert.AreEqual("321", refund.TransactionId);
-            Assert.AreEqual(null, refund.TransactionDate);
-            Assert.AreEqual("api", refund.Provider);
-            Assert.AreEqual(null, refund.ExemptionType);
-            Assert.AreEqual(0, refund.Amount);
-            Assert.AreEqual(0, refund.Shipping);
-            Assert.AreEqual(0, refund.SalesTax);
-        }
-
-        [Test]
-        public void when_listing_order_transactions()
-        {
-            var body = JsonConvert.DeserializeObject<OrdersResponse>(TaxjarFixture.GetJSON("orders/list.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var orders = Bootstrap.client.ListOrders(new {
-                from_transaction_date = "2015/05/01",
-                to_transaction_date = "2015/05/31",
-                provider = "api"
-            });
-
-            Assert.AreEqual("123", orders[0]);
-            Assert.AreEqual("456", orders[1]);
-        }
-
-        [Test]
-        public async Task when_listing_order_transactions_async()
-        {
-            var body = JsonConvert.DeserializeObject<OrdersResponse>(TaxjarFixture.GetJSON("orders/list.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var orders = await Bootstrap.client.ListOrdersAsync(new
-            {
-                from_transaction_date = "2015/05/01",
-                to_transaction_date = "2015/05/31",
-                provider = "api"
-            });
-
-            Assert.AreEqual("123", orders[0]);
-            Assert.AreEqual("456", orders[1]);
-        }
-
-        [Test]
-        public void when_showing_an_order_transaction()
-        {
-            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders/123")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var order = Bootstrap.client.ShowOrder("123", new {
-                provider = "api"
-            });
-            AssertOrder(order);
-        }
-
-        [Test]
-        public async Task when_showing_an_order_transaction_async()
-        {
-            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders/123")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var order = await Bootstrap.client.ShowOrderAsync("123", new {
-                provider = "api"
-            });
-
-            AssertOrder(order);
-        }
-
-        [Test]
-        public void when_creating_an_order_transaction()
-        {
-            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders")
-                    .UsingPost()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Created)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var order = Bootstrap.client.CreateOrder(new {
-                transaction_id = "123",
-                transaction_date = "2015/05/04",
-                provider = "api",
-                exemption_type = "non_exempt",
-                to_country = "US",
-                to_zip = "90002",
-                to_city = "Los Angeles",
-                to_street = "123 Palm Grove Ln",
-                amount = 17.95,
-                shipping = 2,
-                sales_tax = 0.95,
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        sales_tax = 0.95
-                    }
-                }
-            });
-
-            AssertOrder(order);
-        }
-
-        [Test]
-        public async Task when_creating_an_order_transaction_async()
-        {
-            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders")
-                    .UsingPost()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Created)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var order = await Bootstrap.client.CreateOrderAsync(new
-            {
-                transaction_id = "123",
-                transaction_date = "2015/05/04",
-                provider = "api",
-                exemption_type = "non_exempt",
-                to_country = "US",
-                to_zip = "90002",
-                to_city = "Los Angeles",
-                to_street = "123 Palm Grove Ln",
-                amount = 17.95,
-                shipping = 2,
-                sales_tax = 0.95,
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        sales_tax = 0.95
-                    }
-                }
-            });
-
-            AssertOrder(order);
-        }
-
-        [Test]
-        public void when_updating_an_order_transaction()
-        {
-            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders/123")
-                    .UsingPut()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var order = Bootstrap.client.UpdateOrder(new
-            {
-                transaction_id = "123",
-                amount = 17.95,
-                shipping = 2,
-                exemption_type = "non_exempt",
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        discount = 0,
-                        sales_tax = 0.95
-                    }
-                }
-            });
-
-            AssertOrder(order);
-        }
-
-        [Test]
-        public async Task when_updating_an_order_transaction_async()
-        {
-            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders/123")
-                    .UsingPut()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            // verify transaction_id
-            var order = await Bootstrap.client.UpdateOrderAsync(new
-            {
-                transaction_id = "123",
-                amount = 17.95,
-                shipping = 2,
-                exemption_type = "non_exempt",
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        discount = 0,
-                        sales_tax = 0.95
-                    }
-                }
-            });
-
-            AssertOrder(order);
-
-            // verify TransactionId
-            order = await Bootstrap.client.UpdateOrderAsync(new
-            {
-                TransactionId = "123",
-                amount = 17.95,
-                shipping = 2,
-                exemption_type = "non_exempt",
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        discount = 0,
-                        sales_tax = 0.95
-                    }
-                }
-            });
-
-            AssertOrder(order);
-        }
-
-        [Test]
-        public void when_updating_an_order_transaction_with_missing_transaction_id()
-        {
-            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders/123")
-                    .UsingPut()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithBodyAsJson(body)
-            );
-
-            var systemException = Assert.Throws<ArgumentException>(() => Bootstrap.client.UpdateOrder(new
-            {
-                amount = 17.95,
-                shipping = 2,
-                exemption_type = "non_exempt",
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        discount = 0,
-                        sales_tax = 0.95
-                    }
-                }
-            }));
-
-            Assert.AreEqual(ErrorMessage.MissingTransactionId, systemException.Message);
-        }
-
-        [Test]
-        public void when_deleting_an_order_transaction()
-        {
-            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/delete.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders/123")
-                    .UsingDelete()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var order = Bootstrap.client.DeleteOrder("123", new {
-                provider = "api"
-            });
-            AssertDeletedOrder(order);
-        }
-
-        [Test]
-        public async Task when_deleting_an_order_transaction_async()
-        {
-            var body = JsonConvert.DeserializeObject<OrderResponse>(TaxjarFixture.GetJSON("orders/delete.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/orders/123")
-                    .UsingDelete()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var order = await Bootstrap.client.DeleteOrderAsync("123", new {
-                provider = "api"
-            });
-            AssertDeletedOrder(order);
-        }
-
-        [Test]
-        public void when_listing_refund_transactions()
-        {
-            var body = JsonConvert.DeserializeObject<RefundsResponse>(TaxjarFixture.GetJSON("refunds/list.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refunds = Bootstrap.client.ListRefunds(new
-            {
-                from_transaction_date = "2015/05/01",
-                to_transaction_date = "2015/05/31",
-                provider = "api"
-            });
-
-            Assert.AreEqual("321", refunds[0]);
-            Assert.AreEqual("654", refunds[1]);
-        }
-
-        [Test]
-        public async Task when_listing_refund_transactions_async()
-        {
-            var body = JsonConvert.DeserializeObject<RefundsResponse>(TaxjarFixture.GetJSON("refunds/list.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refunds = await Bootstrap.client.ListRefundsAsync(new
-            {
-                from_transaction_date = "2015/05/01",
-                to_transaction_date = "2015/05/31",
-                provider = "api"
-            });
-
-            Assert.AreEqual("321", refunds[0]);
-            Assert.AreEqual("654", refunds[1]);
-        }
-
-        [Test]
-        public void when_showing_a_refund_transaction()
-        {
-            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds/321")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refund = Bootstrap.client.ShowRefund("321", new {
-                provider = "api"
-            });
-            AssertRefund(refund);
-        }
-
-        [Test]
-        public async Task when_showing_a_refund_transaction_async()
-        {
-            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds/321")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refund = await Bootstrap.client.ShowRefundAsync("321", new {
-                provider = "api"
-            });
-            AssertRefund(refund);
-        }
-
-        [Test]
-        public void when_creating_a_refund_transaction()
-        {
-            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds")
-                    .UsingPost()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Created)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refund = Bootstrap.client.CreateRefund(new
-            {
-                transaction_id = "321",
-                transaction_date = "2015/05/04",
-                transaction_reference_id = "123",
-                provider = "api",
-                exemption_type = "non_exempt",
-                to_country = "US",
-                to_zip = "90002",
-                to_city = "Los Angeles",
-                to_street = "123 Palm Grove Ln",
-                amount = 17.95,
-                shipping = 2,
-                sales_tax = 0.95,
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        sales_tax = 0.95
-                    }
-                }
-            });
-
-            AssertRefund(refund);
-        }
-
-        [Test]
-        public async Task when_creating_a_refund_transaction_async()
-        {
-            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds")
-                    .UsingPost()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Created)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refund = await Bootstrap.client.CreateRefundAsync(new
-            {
-                transaction_id = "321",
-                transaction_date = "2015/05/04",
-                transaction_reference_id = "123",
-                provider = "api",
-                exemption_type = "non_exempt",
-                to_country = "US",
-                to_zip = "90002",
-                to_city = "Los Angeles",
-                to_street = "123 Palm Grove Ln",
-                amount = 17.95,
-                shipping = 2,
-                sales_tax = 0.95,
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        sales_tax = 0.95
-                    }
-                }
-            });
-
-            AssertRefund(refund);
-        }
-
-        [Test]
-        public void when_updating_a_refund_transaction()
-        {
-            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds/321")
-                    .UsingPut()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Created)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refund = Bootstrap.client.UpdateRefund(new
-            {
-                transaction_id = "321",
-                amount = 17.95,
-                shipping = 2,
-                exemption_type = "non_exempt",
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        discount = 0,
-                        sales_tax = 0.95
-                    }
-                }
-            });
-
-            AssertRefund(refund);
-        }
-
-        [Test]
-        public async Task when_updating_a_refund_transaction_async()
-        {
-            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds/321")
-                    .UsingPut()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Created)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refund = await Bootstrap.client.UpdateRefundAsync(new
-            {
-                transaction_id = "321",
-                amount = 17.95,
-                shipping = 2,
-                exemption_type = "non_exempt",
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        discount = 0,
-                        sales_tax = 0.95
-                    }
-                }
-            });
-
-            AssertRefund(refund);
-        }
-
-        [Test]
-        public void when_updating_a_refund_transaction_with_missing_transaction_id()
-        {
-            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/show.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds/321")
-                    .UsingPut()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(HttpStatusCode.Created)
-                    .WithBodyAsJson(body)
-            );
-
-            var systemException = Assert.Throws<ArgumentException>(() => Bootstrap.client.UpdateRefund(new
-            {
-                amount = 17.95,
-                shipping = 2,
-                exemption_type = "non_exempt",
-                line_items = new[] {
-                    new {
-                        quantity = 1,
-                        product_identifier = "12-34243-0",
-                        description = "Heavy Widget",
-                        product_tax_code = "20010",
-                        unit_price = 15,
-                        discount = 0,
-                        sales_tax = 0.95
-                    }
-                }
-            }));
-
-            Assert.AreEqual(ErrorMessage.MissingTransactionId, systemException.Message);
-        }
-
-        [Test]
-        public void when_deleting_a_refund_transaction()
-        {
-            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/delete.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds/321")
-                    .UsingDelete()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refund = Bootstrap.client.DeleteRefund("321", new {
-                provider = "api"
-            });
-            AssertDeletedRefund(refund);
-        }
-
-        [Test]
-        public async Task when_deleting_a_refund_transaction_async()
-        {
-            var body = JsonConvert.DeserializeObject<RefundResponse>(TaxjarFixture.GetJSON("refunds/delete.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/transactions/refunds/321")
-                    .UsingDelete()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var refund = await Bootstrap.client.DeleteRefundAsync("321", new {
-                provider = "api"
-            });
-            AssertDeletedRefund(refund);
-        }
+            FromTransactionDate = TaxjarFakes.Faker.Date.Past(1),
+            ToTransactionDate = DateTime.UtcNow
+        };
+
+        var expected = TaxjarFakes.FakeRefundsResponse().Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, refundOrdersEndpoint)
+            .WithQueryString($"from_transaction_date={taxJarRefundFilter.FromTransactionDate:yyyy/MM/dd}&to_transaction_date={taxJarRefundFilter.ToTransactionDate:yyyy/MM/dd}")
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.ListRefundsAsync(taxJarRefundFilter);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected.Refunds);
+    }
+
+    [Test]
+    public async Task when_showing_a_refund_transaction_async()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("refunds/show.json");
+
+        var expected = JsonSerializer.Deserialize<RefundResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var expectedTransactionId = expected!.Refund!.TransactionId;
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+        var endpoint = $"{refundOrdersEndpoint}/{expectedTransactionId}";
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Get, endpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.ShowRefundAsync(expectedTransactionId);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected.Refund);
+    }
+
+    [Test]
+    public async Task when_creating_a_refund_transaction_async()
+    {
+        //arrange
+        var request = TaxjarFakes.FakeTaxjarRefundRequest().Generate();
+        var jsonRequestBody = JsonSerializer.Serialize(request, options.Value.JsonSerializerOptions);
+
+        var jsonData = TaxjarFixture.GetJSON("refunds/show.json");
+        var expected = JsonSerializer.Deserialize<RefundResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Post, refundOrdersEndpoint)
+            .WithHeaders(defaultHeaders)
+            .WithContent(jsonRequestBody)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.CreateRefundAsync(request);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Refund);
+    }
+
+    [TestCaseSource(typeof(TaxjarTestCaseData), nameof(TaxjarTestCaseData.TaxjarRefundRequestTestCases))]
+    public async Task when_creating_a_refund_transaction_missing_required_throws_async((TaxjarRefundRequest taxjarRefundRequest, string expectedMessage) testCase)
+    {
+        //arrange
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        Func<Task> act = async () => await sut.CreateRefundAsync(testCase.taxjarRefundRequest);
+
+        //assert
+        await act.Should().ThrowAsync<ArgumentException>()
+         .WithMessage(testCase.expectedMessage);
+    }
+
+    [Test]
+    public async Task when_updating_a_refund_transaction_async()
+    {
+        //arrange
+        var request = TaxjarFakes.FakeTaxjarRefundRequest(generateLineItems: true, generateCustomerId: true).Generate();
+        var jsonRequestBody = JsonSerializer.Serialize(request, options.Value.JsonSerializerOptions);
+
+        var expected = TaxjarFakes.FakeRefundResponse(generateLineItems: true).Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
+
+        var endpoint = $"{refundOrdersEndpoint}/{request.TransactionId}";
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Put, endpoint)
+            .WithHeaders(defaultHeaders)
+            .WithContent(jsonRequestBody)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.UpdateRefundAsync(request);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Refund);
+    }
+
+    [Test]
+    public async Task when_deleting_a_refund_transaction_async()
+    {
+        //arrange
+        var deleteResponse = TaxjarFakes.FakeDeleteRefundResponse().Generate();
+        var jsonResponseBody = JsonSerializer.Serialize(deleteResponse, options.Value.JsonSerializerOptions);
+        var transactionId = deleteResponse!.Refund!.TransactionId;
+
+        var expected = JsonSerializer.Deserialize<RefundResponse>(jsonResponseBody, options.Value.JsonSerializerOptions);
+
+        var endpoint = $"{refundOrdersEndpoint}/{transactionId}";
+        var handler = new MockHttpMessageHandler();
+
+        handler
+            .When(HttpMethod.Delete, endpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler));
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        var result = await sut.DeleteRefundAsync(transactionId);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Refund);
     }
 }

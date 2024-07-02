@@ -1,116 +1,216 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Taxjar
 {
-    public class TaxResponse
-    {
-        [JsonProperty("tax")]
-        public TaxResponseAttributes Tax { get; set; }
-    }
+     ///<summary>
+     ///Sales tax for a given order. If available, returns a breakdown of rates by jurisdiction at the order, shipping, and line item level.
+     ///</summary>
+     public record TaxResponse
+     {
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("tax")]
+          public TaxResponseAttributes? Tax { get; set; }
+     }
 
-    public class TaxResponseAttributes
-    {
-        [JsonProperty("order_total_amount")]
-        public decimal OrderTotalAmount { get; set; }
+     public record TaxResponseAttributes
+     {
+          ///<summary>
+          ///Total amount of the order.
+          ///</summary>
+          [JsonPropertyName("order_total_amount")]
+          public decimal OrderTotalAmount { get; set; }
 
-        [JsonProperty("shipping")]
-        public decimal Shipping { get; set; }
+          ///<summary>
+          ///Total amount of shipping for the order.
+          ///</summary>
+          [JsonPropertyName("shipping")]
+          public decimal Shipping { get; set; }
 
-        [JsonProperty("taxable_amount")]
-        public decimal TaxableAmount { get; set; }
+          ///<summary>
+          ///Amount of the order to be taxed.
+          ///</summary>
+          [JsonPropertyName("taxable_amount")]
+          public decimal TaxableAmount { get; set; } = 0;
 
-        [JsonProperty("amount_to_collect")]
-        public decimal AmountToCollect { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("amount_to_collect")]
+          public decimal AmountToCollect { get; set; } = 0;
 
-        [JsonProperty("rate")]
-        public decimal Rate { get; set; }
+          ///<summary>
+          ///Overall sales tax rate of the order (amount_to_collect ÷ taxable_amount).
+          ///</summary>
+          [JsonPropertyName("rate")]
+          public decimal Rate { get; set; } = 0;
 
-        [JsonProperty("has_nexus")]
-        public bool HasNexus { get; set; }
+          ///<summary>
+          ///Whether or not you have nexus for the order based on an address on file, nexus_addresses parameter, or from_ parameters.
+          ///</summary>
+          [JsonPropertyName("has_nexus")]
+          public bool HasNexus { get; set; }
 
-        [JsonProperty("freight_taxable")]
-        public bool FreightTaxable { get; set; }
+          ///<summary>
+          ///Freight taxability for the order.
+          ///</summary>
+          [JsonPropertyName("freight_taxable")]
+          public bool FreightTaxable { get; set; }
 
-        [JsonProperty("tax_source")]
-        public string TaxSource { get; set; }
+          ///<summary>
+          ///Origin-based or destination-based sales tax collection.
+          ///</summary>
+          [JsonPropertyName("tax_source")]
+          public string TaxSource { get; set; } = string.Empty;
 
-        [JsonProperty("exemption_type")]
-        public string ExemptionType { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("exemption_type")]
+          public string? ExemptionType { get; set; }
+          ///<summary>
+          ///Jurisdiction names for the order.
+          ///</summary>
+          [JsonPropertyName("jurisdictions")]
+          public TaxJurisdictions? Jurisdictions { get; set; }
 
-        [JsonProperty("jurisdictions")]
-        public TaxJurisdictions Jurisdictions { get; set; }
+          ///<summary>
+          ///Breakdown of rates by jurisdiction for the order, shipping, and individual line items. If has_nexus is false or no line items are provided, no breakdown is returned in the response.
+          ///</summary>
+          [JsonPropertyName("breakdown")]
+          public TaxBreakdown? Breakdown { get; set; }
+     }
 
-        [JsonProperty("breakdown")]
-        public TaxBreakdown Breakdown { get; set; }
-    }
+     public record Tax
+     {
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("from_country")]
+          public string? FromCountry { get; set; }
 
-    public class Tax
-    {
-        [JsonProperty("from_country")]
-        public string FromCountry { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("from_zip")]
+          public string? FromZip { get; set; }
 
-        [JsonProperty("from_zip")]
-        public string FromZip { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("from_state")]
+          public string? FromState { get; set; }
 
-        [JsonProperty("from_state")]
-        public string FromState { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("from_city")]
+          public string? FromCity { get; set; }
 
-        [JsonProperty("from_city")]
-        public string FromCity { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("from_street")]
+          public string? FromStreet { get; set; }
 
-        [JsonProperty("from_street")]
-        public string FromStreet { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("to_country")]
+          public string ToCountry { get; set; } = string.Empty;
 
-        [JsonProperty("to_country")]
-        public string ToCountry { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("to_zip")]
+          public string ToZip { get; set; } = string.Empty;
 
-        [JsonProperty("to_zip")]
-        public string ToZip { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("to_state")]
+          public string ToState { get; set; } = string.Empty;
 
-        [JsonProperty("to_state")]
-        public string ToState { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("to_city")]
+          public string? ToCity { get; set; }
 
-        [JsonProperty("to_city")]
-        public string ToCity { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("to_street")]
+          public string? ToStreet { get; set; }
 
-        [JsonProperty("to_street")]
-        public string ToStreet { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("amount")]
+          public decimal? Amount { get; set; }
 
-        [JsonProperty("amount", NullValueHandling = NullValueHandling.Ignore)]
-        public decimal Amount { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("shipping")]
+          public decimal? Shipping { get; set; }
 
-        [JsonProperty("shipping", NullValueHandling = NullValueHandling.Ignore)]
-        public decimal Shipping { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("customer_id")]
+          public string? CustomerId { get; set; }
 
-        [JsonProperty("customer_id")]
-        public string CustomerId { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("exemption_type")]
+          public string? ExemptionType { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("nexus_addresses")]
+          public List<NexusAddress>? NexusAddresses { get; set; }
 
-        [JsonProperty("exemption_type", NullValueHandling = NullValueHandling.Ignore)]
-        public string ExemptionType { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("line_items")]
+          public List<TaxLineItem>? LineItems { get; set; }
+     }
 
-        [JsonProperty("nexus_addresses")]
-        public List<NexusAddress> NexusAddresses { get; set; }
+     public record TaxLineItem
+     {
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("id")]
+          public string Id { get; set; } = string.Empty;
 
-        [JsonProperty("line_items")]
-        public List<TaxLineItem> LineItems { get; set; }
-    }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("quantity")]
+          public int Quantity { get; set; }
 
-    public class TaxLineItem
-    {
-        [JsonProperty("id")]
-        public string Id { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("product_tax_code")]
+          public string? ProductTaxCode { get; set; }
 
-        [JsonProperty("quantity")]
-        public int Quantity { get; set; }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("unit_price")]
+          public decimal? UnitPrice { get; set; }
 
-        [JsonProperty("product_tax_code")]
-        public string ProductTaxCode { get; set; }
-
-        [JsonProperty("unit_price")]
-        public decimal UnitPrice { get; set; }
-
-        [JsonProperty("discount")]
-        public decimal Discount { get; set; }
-    }
+          ///<summary>
+          ///
+          ///</summary>
+          [JsonPropertyName("discount")]
+          public decimal? Discount { get; set; }
+     }
 }

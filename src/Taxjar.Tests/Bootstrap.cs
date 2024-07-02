@@ -1,50 +1,36 @@
-using System.IO;
-using Newtonsoft.Json;
-using NUnit.Framework;
-using WireMock.Server;
-using WireMock.Settings;
+using System.Net;
+using System.Text.Json;
+using NSubstitute;
+using Taxjar.Tests.Fixtures;
 
-namespace Taxjar.Tests
+namespace Taxjar.Tests;
+
+[SetUpFixture]
+static class Bootstrap
 {
-    [SetUpFixture]
-    public class Bootstrap
+
+    [OneTimeSetUp]
+    public static void Init()
     {
-        public static TaxjarApi client;
-        public static FluentMockServer server;
-        public static string apiKey;
-
-        [OneTimeSetUp]
-        public static void Init()
+        TaxJarOptions = new()
         {
-            if (server == null)
-            {
-                server = FluentMockServer.Start(new FluentMockServerSettings
-                {
-                    Urls = new[] { "http://localhost:9191" }
-                });
-            }
+            JsonSerializerOptions = TaxjarConstants.TaxJarDefaultSerializationOptions,
+            ApiToken = TaxjarFakes.Faker.Internet.Password(),
+            ApiUrl = TaxjarFakes.Faker.Internet.UrlWithPath(protocol: "https", domain: "api.taxjartest.com"),
+            ApiVersion = "v2",
+            UseSandbox = false
+        };
 
-            var options = GetTestOptions();
-            apiKey = options.ApiToken;
-            client = new TaxjarApi(apiKey, new { apiUrl = "http://localhost:9191" });
-        }
-
-        [OneTimeTearDown]
-        public static void Destroy()
-        {
-            server.Stop();
-        }
-
-        private static TestOptions GetTestOptions()
-        {
-            var json = File.ReadAllText("../../../secrets.json");
-            var options = JsonConvert.DeserializeObject<TestOptions>(json);
-            return options;
-        }
-
-        private class TestOptions
-        {
-            public string ApiToken { get; set; }
-        }
+        HttpClientFactory = Substitute.For<IHttpClientFactory>();
     }
+
+    public static IHttpClientFactory HttpClientFactory { get; private set; }
+    public static TaxjarApiOptions TaxJarOptions { get; private set; }
+    public static readonly Uri DefaultApiUri = new Uri($"{TaxjarConstants.DefaultApiUrl}/{TaxjarConstants.ApiVersion}");
+
+    public static string FormatDateQueryParameter(this DateTime dateTime, JsonSerializerOptions jsonSerializerOptions) =>
+            WebUtility.UrlEncode(JsonSerializer.Serialize(dateTime, jsonSerializerOptions).Replace("\"", string.Empty));
+
+    public static string FormatDateQueryParameter(this DateTime? dateTime, JsonSerializerOptions jsonSerializerOptions) =>
+         WebUtility.UrlEncode(JsonSerializer.Serialize(dateTime, jsonSerializerOptions).Replace("\"", string.Empty));
 }

@@ -1,507 +1,481 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using RestSharp;
+using Microsoft.Extensions.Options;
 using Taxjar.Infrastructure;
-using RestRequest = RestSharp.RestRequest;
 
-namespace Taxjar
+namespace Taxjar;
+
+public class TaxjarApi : ITaxjarApi
 {
-    public static class TaxjarConstants
+    private readonly IHttpClientFactory httpClientFactory;
+    private readonly IOptions<TaxjarApiOptions> options;
+
+    public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    public string ApiUrl { get; set; }
+    public string ApiToken { get; set; }
+    public string UserAgent { get; set; }
+    public int Timeout { get; set; }
+
+    public TaxjarApi(IHttpClientFactory httpClientFactory, IOptions<TaxjarApiOptions> options)
     {
-        public const string DefaultApiUrl = "https://api.taxjar.com";
-        public const string SandboxApiUrl = "https://api.sandbox.taxjar.com";
-        public const string ApiVersion = "v2";
+        this.httpClientFactory = httpClientFactory;
+        this.options = options;
+        if (string.IsNullOrWhiteSpace(options.Value.ApiToken))
+        {
+            throw new ArgumentException("Please provide a TaxJar API key.", nameof(options));
+        }
+
+        ApiToken = options.Value.ApiToken;
+        ApiUrl = GetApiUrl(options.Value);
+        Headers = options.Value.Headers;
+        Timeout = Convert.ToInt32(options.Value.Timeout.TotalMilliseconds);
+        UserAgent = GetUserAgent();
     }
 
-    public class TaxjarApi
+    private static string GetApiUrl(TaxjarApiOptions taxJarApiOptions)
     {
-        internal RestClient apiClient;
-        public string apiToken { get; set; }
-        public string apiUrl { get; set; }
-        public IDictionary<string, string> headers { get; set; }
-        public int timeout { get; set; }
-
-        public TaxjarApi(string token, object parameters = null)
+        if (!string.IsNullOrWhiteSpace(taxJarApiOptions.ApiUrl)
+        && taxJarApiOptions.ApiUrl.IndexOf(TaxjarConstants.DefaultApiUrl) == -1)
         {
-            apiToken = token;
-            apiUrl = TaxjarConstants.DefaultApiUrl + "/" + TaxjarConstants.ApiVersion + "/";
-            headers = new Dictionary<string, string>();
-            timeout = 0; // Milliseconds
-
-            if (parameters != null)
-            {
-                if (parameters.GetType().GetProperty("apiUrl") != null)
-                {
-                    apiUrl = parameters.GetType().GetProperty("apiUrl").GetValue(parameters).ToString();
-                    apiUrl += "/" + TaxjarConstants.ApiVersion + "/";
-                }
-
-                if (parameters.GetType().GetProperty("headers") != null)
-                {
-                    headers = (IDictionary<string, string>) parameters.GetType().GetProperty("headers").GetValue(parameters);
-                }
-
-                if (parameters.GetType().GetProperty("timeout") != null)
-                {
-                    timeout = (int) parameters.GetType().GetProperty("timeout").GetValue(parameters);
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(apiToken))
-            {
-                throw new ArgumentException("Please provide a TaxJar API key.", nameof(apiToken));
-            }
-
-            RestClientOptions restClientOptions = new RestClientOptions(apiUrl)
-            {
-                UserAgent = this.GetUserAgent(),
-            };
-            apiClient = new RestClient(restClientOptions);
+            return taxJarApiOptions.ApiUrl.LastIndexOf('/') == taxJarApiOptions.ApiUrl.Length - 1 ? taxJarApiOptions.ApiUrl : taxJarApiOptions.ApiUrl + "/";
         }
 
-        public virtual void SetApiConfig(string key, object value)
+        return taxJarApiOptions.UseSandbox ? GetApiBaseUrl(TaxjarConstants.SandboxApiUrl, taxJarApiOptions.ApiVersion) : GetApiBaseUrl(TaxjarConstants.DefaultApiUrl, taxJarApiOptions.ApiVersion);
+    }
+
+    private static string GetApiBaseUrl(string apiUrl, string apiVersion) => string.Format("{0}/{1}/", apiUrl, apiVersion);
+
+    protected HttpClient CreateClient()
+    { 
+
+        var taxJarHttpClient = httpClientFactory.CreateClient(nameof(TaxjarApi));
+        taxJarHttpClient.BaseAddress = new Uri(ApiUrl);
+        taxJarHttpClient.Timeout = options.Value.Timeout;
+
+        taxJarHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ApiToken);
+        taxJarHttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(TaxjarConstants.ContentType));
+        taxJarHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
+
+        foreach (var key in Headers.Select(header => header.Key))
         {
-            if (key == "apiUrl")
+            if (key.Equals(TaxjarConstants.ReservedHeaders.Authorization, StringComparison.OrdinalIgnoreCase)
+                || key.Equals(TaxjarConstants.ReservedHeaders.Accept, StringComparison.OrdinalIgnoreCase))
             {
-                value += "/" + TaxjarConstants.ApiVersion + "/";
-                apiClient = new RestClient(value.ToString());
+                continue;
             }
 
-            GetType().GetProperty(key).SetValue(this, value, null);
-        }
-
-        public virtual object GetApiConfig(string key)
-        {
-            return GetType().GetProperty(key).GetValue(this);
-        }
-
-        protected virtual RestRequest CreateRequest(string action, Method method = Method.Post, object body = null)
-        {
-            var request = new RestRequest(action, method)
+            if (key.Equals(TaxjarConstants.ReservedHeaders.UserAgent, StringComparison.OrdinalIgnoreCase))
             {
-                RequestFormat = DataFormat.Json
-            };
-            var includeBody = new[] { Method.Post, Method.Put, Method.Patch }.Contains(method);
-
-            foreach (var header in headers)
-            {
-                request.AddHeader(header.Key, header.Value);
+                taxJarHttpClient.DefaultRequestHeaders.UserAgent.TryParseAdd(Headers[key]);
             }
 
-            request.AddHeader("Authorization", "Bearer " + apiToken);
-            request.AddHeader("User-Agent", GetUserAgent());
-
-            request.Timeout = timeout;
-
-            if (body != null)
-            {
-                if (IsAnonymousType(body.GetType()))
-                {
-                    if (includeBody)
-                    {
-                        request.AddJsonBody(body);
-                    }
-                    else
-                    {
-                        foreach (var prop in body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
-                        {
-                            request.AddQueryParameter(prop.Name, prop.GetValue(body).ToString());
-                        }
-                    }
-                }
-                else
-                {
-                    if (includeBody)
-                    {
-                        request.AddParameter("application/json", JsonConvert.SerializeObject(body), ParameterType.RequestBody);
-                    }
-                    else
-                    {
-                        body = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(body));
-
-                        foreach (var prop in JObject.FromObject(body).Properties())
-                        {
-                            request.AddQueryParameter(prop.Name, prop.Value.ToString());
-                        }
-                    }
-                }
-            }
-
-            return request;
+            taxJarHttpClient.DefaultRequestHeaders.Add(key, Headers[key]);
         }
 
-        protected virtual T SendRequest<T>(string endpoint, object body = null, Method httpMethod = Method.Post) where T : new()
-        {
-            var request = CreateRequest(endpoint, httpMethod, body);
-            var response = apiClient.Execute<T>(request);
+        return taxJarHttpClient;
+    }
 
-            if ((int)response.StatusCode >= 400)
+    private async Task<TResponse?> SendRequestAsync<TResponse>(Func<CancellationToken, Task<HttpResponseMessage>> callback, CancellationToken cancellationToken = default) where TResponse : new()
+    {
+        using (HttpResponseMessage response = await callback(cancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!response.IsSuccessStatusCode)
             {
-                var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(response.Content);
+                var errorResponse = await response.Content.ReadAsStringAsync();
+                var taxjarError = JsonSerializer.Deserialize<TaxjarError>(errorResponse, options.Value.JsonSerializerOptions) ?? throw new JsonException(string.Format("An error thrown, but it failed to deserialize type {0}. The original message was: {1}", typeof(TaxjarError).Name, errorResponse));
                 var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
                 throw new TaxjarException(response.StatusCode, taxjarError, errorMessage);
             }
 
-            if (response.ErrorException != null)
-            {
-                throw new Exception(response.ErrorMessage, response.ErrorException);
-            }
-
-            return JsonConvert.DeserializeObject<T>(response.Content);
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<TResponse>(jsonResponse, options.Value.JsonSerializerOptions);
         }
-
-        protected virtual async Task<T> SendRequestAsync<T>(string endpoint, object body = null, Method httpMethod = Method.Post) where T : new()
+    }
+    
+    private async Task<TResponse?> GetRequestAsync<TResponse>(string endpoint, CancellationToken cancellationToken = default) where TResponse : new()
+    {
+        return await SendRequestAsync<TResponse>(async (cancellationToken) =>
         {
-            var request = CreateRequest(endpoint, httpMethod, body);
-            var response = await apiClient.ExecuteAsync<T>(request).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            if ((int)response.StatusCode >= 400)
-            {
-                var taxjarError = JsonConvert.DeserializeObject<TaxjarError>(response.Content);
-                var errorMessage = taxjarError.Error + " - " + taxjarError.Detail;
-                throw new TaxjarException(response.StatusCode, taxjarError, errorMessage);
-            }
+            return await CreateClient().GetAsync(endpoint, cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
+    }
 
-            if (response.ErrorException != null)
-            {
-                throw new Exception(response.ErrorMessage, response.ErrorException);
-            }
-
-            return JsonConvert.DeserializeObject<T>(response.Content);
-        }
-
-        protected virtual bool IsAnonymousType(Type type)
+    private async Task<KResponse?> PostRequestAsync<TRequest, KResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default) where TRequest : new() where KResponse : new()
+    {
+        return await SendRequestAsync<KResponse>(async (cancellationToken) =>
         {
-            if (type == null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
-            return Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false)
-                && type.IsGenericType && type.Name.Contains("AnonymousType")
-                && (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"))
-                && (type.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;
-        }
+            var httpContent = TaxjarRequestBuilder.SerializerHttpContent(request, options.Value.JsonSerializerOptions);
 
-        public virtual List<Category> Categories()
+            return await CreateClient().PostAsync(endpoint, httpContent, cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
+    }
+
+    private async Task<KResponse?> PutRequestAsync<TRequest, KResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default) where TRequest : new() where KResponse : new()
+    {
+        return await SendRequestAsync<KResponse>(async (cancellationToken) =>
         {
-            var response = SendRequest<CategoriesResponse>("categories", null, Method.Get);
-            return response.Categories;
-        }
+            cancellationToken.ThrowIfCancellationRequested();
 
-        public virtual RateResponseAttributes RatesForLocation(string zip, object parameters = null)
+            var httpContent = TaxjarRequestBuilder.SerializerHttpContent(request, options.Value.JsonSerializerOptions);
+
+            return await CreateClient().PutAsync(endpoint, httpContent, cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
+    }
+
+    private async Task<TResponse?> DeleteRequestAsync<TResponse>(string endpoint, CancellationToken cancellationToken = default) where TResponse : new()
+    {
+        return await SendRequestAsync<TResponse>(async (cancellationToken) =>
         {
-            var response = SendRequest<RateResponse>("rates/" + zip, parameters, Method.Get);
-            return response.Rate;
-        }
+            cancellationToken.ThrowIfCancellationRequested();
 
-        public virtual TaxResponseAttributes TaxForOrder(object parameters)
-        {
-            var response = SendRequest<TaxResponse>("taxes", parameters, Method.Post);
-            return response.Tax;
-        }
+            return await CreateClient().DeleteAsync(endpoint, cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
+    }
 
-        public virtual List<String> ListOrders(object parameters = null)
-        {
-            var response = SendRequest<OrdersResponse>("transactions/orders", parameters, Method.Get);
-            return response.Orders;
-        }
+    /// <summary>
+    /// Lists all tax categories.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns>List of product categories and corresponding tax code</returns>
+    public async Task<List<Category>?> CategoriesAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await GetRequestAsync<CategoriesResponse>(TaxjarConstants.CategoriesEndpoint, cancellationToken);
+        return response?.Categories;
+    }
 
-        public virtual OrderResponseAttributes ShowOrder(string transactionId, object parameters = null)
-        {
-            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.Get);
-            return response.Order;
-        }
+    /// <summary>
+    /// Shows the sales tax rates for a given location.
+    /// </summary>
+    /// <param name="address"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Rates for a given location broken down by state, county, city, and district. </returns>
+    public async Task<RateResponseAttributes?> RatesForLocationAsync(Address address, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateZip(address.Zip);
+        
+        var ratesForLocationPath = TaxjarRequestBuilder.GetRatesForLocationPath(address, options.Value.JsonSerializerOptions);
+        var response = await GetRequestAsync<RateResponse>(ratesForLocationPath, cancellationToken).ConfigureAwait(false);
+        
+        return response?.Rate;
+    }
 
-        public virtual OrderResponseAttributes CreateOrder(object parameters)
-        {
-            var response = SendRequest<OrderResponse>("transactions/orders", parameters, Method.Post);
-            return response.Order;
-        }
+    /// <summary>
+    /// Lists existing customers
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns>List of customer IDs</returns>
+    public async Task<List<string>?> ListCustomersAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await GetRequestAsync<CustomersResponse>(TaxjarConstants.CustomersEndpoint, cancellationToken);
+        return response?.Customers;
+    }
 
-        public virtual OrderResponseAttributes UpdateOrder(object parameters)
-        {
-            var transactionId = GetTransactionIdFromParameters(parameters);
-            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.Put);
-            return response.Order;
-        }
+    /// <summary>
+    /// Shows an existing customer 
+    /// </summary>
+    /// <param name="customerId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Details of a customer</returns>
+    public async Task<CustomerResponseAttributes?> ShowCustomerAsync(string customerId, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateCustomerId(customerId);
+        var showCustomersPath = TaxjarRequestBuilder.GetShowCustomerPath(customerId);
 
-        public virtual OrderResponseAttributes DeleteOrder(string transactionId, object parameters = null)
-        {
-            var response = SendRequest<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.Delete);
-            return response.Order;
-        }
+        var response = await GetRequestAsync<CustomerResponse>(showCustomersPath, cancellationToken).ConfigureAwait(false);
+        return response?.Customer;
+    }
 
-        public virtual List<String> ListRefunds(object parameters)
-        {
-            var response = SendRequest<RefundsResponse>("transactions/refunds", parameters, Method.Get);
-            return response.Refunds;
-        }
+    /// <summary>
+    /// Creates a new customer.
+    /// </summary>
+    /// <param name="customer"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Details of the new customer.</returns>
+    public async Task<CustomerResponseAttributes?> CreateCustomerAsync(TaxjarCustomerRequest taxjarCustomerRequest, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateCustomer(taxjarCustomerRequest);
+        return await PostRequestAsync<TaxjarCustomerRequest, CustomerResponseAttributes>(TaxjarConstants.CustomersEndpoint, taxjarCustomerRequest, cancellationToken).ConfigureAwait(false);
+    }
 
-        public virtual RefundResponseAttributes ShowRefund(string transactionId, object parameters = null)
-        {
-            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.Get);
-            return response.Refund;
-        }
+    /// <summary>
+    /// Updates an existing customer 
+    /// </summary>
+    /// <param name="customer"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Details of the updated customer.</returns>
+    public async Task<CustomerResponseAttributes?> UpdateCustomerAsync(TaxjarCustomerRequest taxjarCustomerRequest, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateCustomer(taxjarCustomerRequest);
+        var updateCustomersPath = TaxjarRequestBuilder.GetShowCustomerPath(taxjarCustomerRequest.CustomerId);
 
-        public virtual RefundResponseAttributes CreateRefund(object parameters)
-        {
-            var response = SendRequest<RefundResponse>("transactions/refunds", parameters, Method.Post);
-            return response.Refund;
-        }
+        return await PutRequestAsync<TaxjarCustomerRequest, CustomerResponseAttributes>(updateCustomersPath, taxjarCustomerRequest, cancellationToken).ConfigureAwait(false);
+    }
 
-        public virtual RefundResponseAttributes UpdateRefund(object parameters)
-        {
-            var transactionId = GetTransactionIdFromParameters(parameters);
+    /// <summary>
+    ///Deletes an existing customer created 
+    /// </summary>
+    /// <param name="customerId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Deleted customer identifiers.</returns>
+    public async Task<CustomerResponseAttributes?> DeleteCustomerAsync(string customerId, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateCustomerId(customerId);
+        var deleteCustomersPath = TaxjarRequestBuilder.GetShowCustomerPath(customerId);
 
-            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.Put);
-            return response.Refund;
-        }
+        var response = await DeleteRequestAsync<CustomerResponse>(deleteCustomersPath, cancellationToken).ConfigureAwait(false);
+        return response?.Customer;
+    }
 
-        public virtual RefundResponseAttributes DeleteRefund(string transactionId, object parameters = null)
-        {
-            var response = SendRequest<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.Delete);
-            return response.Refund;
-        }
+    /// <summary>
+    /// Lists existing nexus locations for an existing TaxJar account.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns>List of nexus regions sorted alphabetically.</returns>
+    public async Task<List<NexusRegion>?> NexusRegionsAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await GetRequestAsync<NexusRegionsResponse>(TaxjarConstants.NexusRegionsEndpoint, cancellationToken).ConfigureAwait(false);
+        return response?.Regions;
+    }
 
-        public virtual List<String> ListCustomers(object parameters = null)
-        {
-            var response = SendRequest<CustomersResponse>("customers", parameters, Method.Get);
-            return response.Customers;
-        }
+    /// <summary>
+    /// Retrieve minimum and average sales tax rates by region as a backup.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns>List of summarized rates for each region/state.</returns>
+    public async Task<List<SummaryRate>?> SummaryRatesAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await GetRequestAsync<SummaryRatesResponse>(TaxjarConstants.SummaryRatesEndpoint, cancellationToken).ConfigureAwait(false);
+        return response?.SummaryRates;
+    }
 
-        public virtual CustomerResponseAttributes ShowCustomer(string customerId)
-        {
-            var response = SendRequest<CustomerResponse>("customers/" + customerId, null, Method.Get);
-            return response.Customer;
-        }
+    /// <summary>
+    ///Calculate sales tax for an order 
+    /// </summary>
+    ///<remarks>
+    ///Shows the sales tax that should be collected for a given order.
+    ///</remarks>
+    /// <param name="taxjarTaxCalculationRequest"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Returns calculated sales tax for a given order. If available, returns a breakdown of rates by jurisdiction at the order, shipping, and line item level.</returns>
+    public async Task<TaxResponseAttributes?> TaxForOrderAsync(TaxjarTaxCalculationRequest taxjarTaxCalculationRequest, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateTaxjarTaxCalculationRequest(taxjarTaxCalculationRequest);
+        var response = await PostRequestAsync<TaxjarTaxCalculationRequest, TaxResponse>(TaxjarConstants.TaxesEndpoint, taxjarTaxCalculationRequest, cancellationToken).ConfigureAwait(false);
+        return response?.Tax;
+    }
 
-        public virtual CustomerResponseAttributes CreateCustomer(object parameters)
-        {
-            var response = SendRequest<CustomerResponse>("customers", parameters, Method.Post);
-            return response.Customer;
-        }
+    /// <summary>
+    /// Lists existing order transactions.
+    /// </summary>
+    /// <param name="orderFilter"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>List of order IDs created through the API.</returns>
+    public async Task<List<string>?> ListOrdersAsync(OrderFilter orderFilter, CancellationToken cancellationToken = default)
+    {
+        var listOrdersPath = TaxjarRequestBuilder.GetFilterOrdersPath(orderFilter, options.Value.JsonSerializerOptions);
 
-        public virtual CustomerResponseAttributes UpdateCustomer(object parameters)
-        {
-            var customerId = GetCustomerIdFromParameters(parameters);
+        var response = await GetRequestAsync<OrdersResponse>(listOrdersPath, cancellationToken).ConfigureAwait(false);
 
-            var response = SendRequest<CustomerResponse>("customers/" + customerId, parameters, Method.Put);
-            return response.Customer;
-        }
+        return response?.Orders;
+    }
 
-        public virtual CustomerResponseAttributes DeleteCustomer(string customerId)
-        {
-            var response = SendRequest<CustomerResponse>("customers/" + customerId, null, Method.Delete);
-            return response.Customer;
-        }
+    /// <summary>
+    /// Shows an existing order transaction created through the API.
+    /// </summary>
+    /// <param name="transactionId">Unique identifier of the given order transaction.</param>
+    /// <param name="provider">Source of where the transaction was originally recorded. Defaults to “api”.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<OrderResponseAttributes?> ShowOrderAsync(string transactionId, string? provider = null, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateTransactionId(transactionId);
 
-        public virtual List<NexusRegion> NexusRegions()
-        {
-            var response = SendRequest<NexusRegionsResponse>("nexus/regions", null, Method.Get);
-            return response.Regions;
-        }
+        var showOrderPath = TaxjarRequestBuilder.GetTransactionIdPathWithProvider(TaxjarConstants.TransactionOrdersEndpoint, transactionId, provider);
 
-        public virtual List<Address> ValidateAddress(object parameters)
-        {
-            var response = SendRequest<AddressValidationResponse>("addresses/validate", parameters, Method.Post);
-            return response.Addresses;
-        }
+        var response = await GetRequestAsync<OrderResponse>(showOrderPath, cancellationToken).ConfigureAwait(false);
 
-        public virtual ValidationResponseAttributes ValidateVat(object parameters)
-        {
-            var response = SendRequest<ValidationResponse>("validation", parameters, Method.Get);
-            return response.Validation;
-        }
+        return response?.Order;
+    }
 
-        public virtual List<SummaryRate> SummaryRates()
-        {
-            var response = SendRequest<SummaryRatesResponse>("summary_rates", null, Method.Get);
-            return response.SummaryRates;
-        }
+    /// <summary>
+    /// Creates a new order transaction.
+    /// </summary>
+    /// <param name="taxjarCreateOrderRequest"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Details of a given order transaction.</returns>
+    public async Task<OrderResponseAttributes?> CreateOrderAsync(TaxjarOrderRequest taxjarOrderRequest, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateTaxjarCreateOrderRequest(taxjarOrderRequest);
 
-        public virtual async Task<List<Category>> CategoriesAsync()
-        {
-            var response = await SendRequestAsync<CategoriesResponse>("categories", null, Method.Get).ConfigureAwait(false);
-            return response.Categories;
-        }
+        var response = await PostRequestAsync<TaxjarOrderRequest, OrderResponse>(TaxjarConstants.TransactionOrdersEndpoint, taxjarOrderRequest, cancellationToken).ConfigureAwait(false);
 
-        public virtual async Task<RateResponseAttributes> RatesForLocationAsync(string zip, object parameters = null)
-        {
-            var response = await SendRequestAsync<RateResponse>("rates/" + zip, parameters, Method.Get).ConfigureAwait(false);
-            return response.Rate;
-        }
+        return response?.Order;
+    }
 
-        public virtual async Task<TaxResponseAttributes> TaxForOrderAsync(object parameters)
-        {
-            var response = await SendRequestAsync<TaxResponse>("taxes", parameters, Method.Post).ConfigureAwait(false);
-            return response.Tax;
-        }
+    /// <summary>
+    /// Updates an existing order transaction created through the API.
+    /// </summary>
+    /// <param name="taxjarCreateOrderRequest"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Details of the updated order transaction.</returns>
+    public async Task<OrderResponseAttributes?> UpdateOrderAsync(TaxjarOrderRequest taxjarOrderRequest, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateTaxjarUpdateOrderRequest(taxjarOrderRequest);
+        
+        var updateOrderPath = TaxjarRequestBuilder.ResourcePath(TaxjarConstants.TransactionOrdersEndpoint, taxjarOrderRequest.TransactionId);
 
-        public virtual async Task<List<string>> ListOrdersAsync(object parameters = null)
-        {
-            var response = await SendRequestAsync<OrdersResponse>("transactions/orders", parameters, Method.Get).ConfigureAwait(false);
-            return response.Orders;
-        }
+        var response = await PutRequestAsync<TaxjarOrderRequest, OrderResponse>(updateOrderPath, taxjarOrderRequest, cancellationToken).ConfigureAwait(false);
 
-        public virtual async Task<OrderResponseAttributes> ShowOrderAsync(string transactionId, object parameters = null)
-        {
-            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.Get).ConfigureAwait(false);
-            return response.Order;
-        }
+        return response?.Order;
+    }
 
-        public virtual async Task<OrderResponseAttributes> CreateOrderAsync(object parameters)
-        {
-            var response = await SendRequestAsync<OrderResponse>("transactions/orders", parameters, Method.Post).ConfigureAwait(false);
-            return response.Order;
-        }
+    /// <summary>
+    /// Deletes an existing order transaction created through the API.
+    /// </summary>
+    /// <param name="transactionId">Unique identifier of the given order transaction.</param>
+    /// <param name="provider">Source of where the transaction was originally recorded. Defaults to “api”.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Deleted order transaction identifiers.</returns>
+    public async Task<OrderResponseAttributes?> DeleteOrderAsync(string transactionId, string? provider = null, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateTransactionId(transactionId);
 
-        public virtual async Task<OrderResponseAttributes> UpdateOrderAsync(object parameters)
-        {
-            var transactionId = GetTransactionIdFromParameters(parameters);
-            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.Put).ConfigureAwait(false);
-            return response.Order;
-        }
+        var deleteOrderPath = TaxjarRequestBuilder.GetTransactionIdPathWithProvider(TaxjarConstants.TransactionOrdersEndpoint, transactionId, provider);
 
-        public virtual async Task<OrderResponseAttributes> DeleteOrderAsync(string transactionId, object parameters = null)
-        {
-            var response = await SendRequestAsync<OrderResponse>("transactions/orders/" + transactionId, parameters, Method.Delete).ConfigureAwait(false);
-            return response.Order;
-        }
+        var response = await DeleteRequestAsync<OrderResponse>(deleteOrderPath, cancellationToken).ConfigureAwait(false);
 
-        public virtual async Task<List<string>> ListRefundsAsync(object parameters)
-        {
-            var response = await SendRequestAsync<RefundsResponse>("transactions/refunds", parameters, Method.Get).ConfigureAwait(false);
-            return response.Refunds;
-        }
+        return response?.Order;
+    }
 
-        public virtual async Task<RefundResponseAttributes> ShowRefundAsync(string transactionId, object parameters = null)
-        {
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.Get).ConfigureAwait(false);
-            return response.Refund;
-        }
+    /// <summary>
+    /// Lists existing refund transactions
+    /// </summary>
+    /// <param name="refundFilter"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>List of of refund IDs.</returns>
+    public async Task<List<string>?> ListRefundsAsync(RefundFilter refundFilter, CancellationToken cancellationToken = default)
+    {
+        var listRefundPath = TaxjarRequestBuilder.GetFilterRefundPath(refundFilter, options.Value.JsonSerializerOptions);
 
-        public virtual async Task<RefundResponseAttributes> CreateRefundAsync(object parameters)
-        {
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds", parameters, Method.Post).ConfigureAwait(false);
-            return response.Refund;
-        }
+        var response = await GetRequestAsync<RefundsResponse?>(listRefundPath, cancellationToken).ConfigureAwait(false);
 
-        public virtual async Task<RefundResponseAttributes> UpdateRefundAsync(object parameters)
-        {
-            var transactionId = GetTransactionIdFromParameters(parameters);
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.Put).ConfigureAwait(false);
-            return response.Refund;
-        }
+        return response?.Refunds;
+    }
 
-        public virtual async Task<RefundResponseAttributes> DeleteRefundAsync(string transactionId, object parameters = null)
-        {
-            var response = await SendRequestAsync<RefundResponse>("transactions/refunds/" + transactionId, parameters, Method.Delete).ConfigureAwait(false);
-            return response.Refund;
-        }
+    /// <summary>
+    /// Shows an existing refund transaction
+    /// </summary>
+    /// <param name="refundTransactionId">Unique identifier of the given refund transaction.</param>
+    /// <param name="provider">Source of where the transaction was originally recorded. Defaults to “api”.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Details of a given refund transaction</returns>
+    public async Task<RefundResponseAttributes?> ShowRefundAsync(string refundTransactionId, string? provider = null, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateTransactionId(refundTransactionId);
+        var showRefundPath = TaxjarRequestBuilder.GetShowRefund(refundTransactionId, provider);
 
-        public virtual async Task<List<string>> ListCustomersAsync(object parameters = null)
-        {
-            var response = await SendRequestAsync<CustomersResponse>("customers", parameters, Method.Get).ConfigureAwait(false);
-            return response.Customers;
-        }
+        var response = await GetRequestAsync<RefundResponse>(showRefundPath, cancellationToken).ConfigureAwait(false);
+        return response?.Refund;
+    }
 
-        public virtual async Task<CustomerResponseAttributes> ShowCustomerAsync(string customerId)
-        {
-            var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.Get).ConfigureAwait(false);
-            return response.Customer;
-        }
+    /// <summary>
+    /// Creates a new refund transaction.
+    /// </summary>
+    /// <param name="taxjarRefundRequest"></param>
+    /// <param name="provider"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Details of the new refund transaction.</returns>
+    public async Task<RefundResponseAttributes?> CreateRefundAsync(TaxjarRefundRequest taxjarRefundRequest, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateTaxjarRefundRequest(taxjarRefundRequest);
 
-        public virtual async Task<CustomerResponseAttributes> CreateCustomerAsync(object parameters)
-        {
-            var response = await SendRequestAsync<CustomerResponse>("customers", parameters, Method.Post).ConfigureAwait(false);
-            return response.Customer;
-        }
+        var response = await PostRequestAsync<TaxjarRefundRequest, RefundResponse>(TaxjarConstants.TransactionRefundsEndpoint, taxjarRefundRequest, cancellationToken).ConfigureAwait(false);
 
-        public virtual async Task<CustomerResponseAttributes> UpdateCustomerAsync(object parameters)
-        {
-            var customerId = GetCustomerIdFromParameters(parameters);
-            var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, parameters, Method.Put).ConfigureAwait(false);
-            return response.Customer;
-        }
+        return response?.Refund;
+    }
 
-        public virtual async Task<CustomerResponseAttributes> DeleteCustomerAsync(string customerId)
-        {
-            var response = await SendRequestAsync<CustomerResponse>("customers/" + customerId, null, Method.Delete).ConfigureAwait(false);
-            return response.Customer;
-        }
+    /// <summary>
+    /// Updates an existing refund transaction created through the API.
+    /// </summary>
+    /// <param name="taxjarRefundRequest"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Details of the updated refund transaction</returns>
+    public async Task<RefundResponseAttributes?> UpdateRefundAsync(TaxjarRefundRequest taxjarRefundRequest, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateTaxjarRefundRequestTransactionId(taxjarRefundRequest);
 
-        public virtual async Task<List<NexusRegion>> NexusRegionsAsync()
-        {
-            var response = await SendRequestAsync<NexusRegionsResponse>("nexus/regions", null, Method.Get).ConfigureAwait(false);
-            return response.Regions;
-        }
+        var showRefundPath = TaxjarRequestBuilder.GetShowRefund(taxjarRefundRequest.TransactionId);
 
-        public virtual async Task<List<Address>> ValidateAddressAsync(object parameters)
-        {
-            var response = await SendRequestAsync<AddressValidationResponse>("addresses/validate", parameters, Method.Post).ConfigureAwait(false);
-            return response.Addresses;
-        }
+        var response = await PutRequestAsync<TaxjarRefundRequest, RefundResponse>(showRefundPath, taxjarRefundRequest, cancellationToken).ConfigureAwait(false);
 
-        public virtual async Task<ValidationResponseAttributes> ValidateVatAsync(object parameters)
-        {
-            var response = await SendRequestAsync<ValidationResponse>("validation", parameters, Method.Get).ConfigureAwait(false);
-            return response.Validation;
-        }
+        return response?.Refund;
+    }
 
-        public virtual async Task<List<SummaryRate>> SummaryRatesAsync()
-        {
-            var response = await SendRequestAsync<SummaryRatesResponse>("summary_rates", null, Method.Get).ConfigureAwait(false);
-            return response.SummaryRates;
-        }
+    /// <summary>
+    ///Deletes an existing refund transaction created through the API. 
+    /// </summary>
+    /// <param name="transactionId"></param>
+    /// <param name="provider"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Deleted refund transaction identifiers.</returns>
+    public async Task<RefundResponseAttributes?> DeleteRefundAsync(string transactionId, string? provider = null, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateTransactionId(transactionId);
 
-        private string GetTransactionIdFromParameters(object parameters)
-        {
-            var propertyInfo = parameters.GetType().GetProperty("transaction_id") ?? parameters.GetType().GetProperty("TransactionId");
-            var transactionId = GetValueOrDefault(parameters, propertyInfo);
+        var deleteRefundPath = TaxjarRequestBuilder.GetShowRefund(transactionId, provider);
 
-            if (string.IsNullOrWhiteSpace(transactionId))
-            {
-                throw new ArgumentException(ErrorMessage.MissingTransactionId);
-            }
+        var response = await DeleteRequestAsync<RefundResponse>(deleteRefundPath, cancellationToken).ConfigureAwait(false);
 
-            return transactionId;
-        }
+        return response?.Refund;
+    }
 
-        private string GetCustomerIdFromParameters(object parameters)
-        {
-            var propertyInfo = parameters.GetType().GetProperty("customer_id") ?? parameters.GetType().GetProperty("CustomerId");
-            var customerId = GetValueOrDefault(parameters, propertyInfo);
+    /// <summary>
+    /// Validates a customer address and returns back a collection of address matches.
+    /// </summary>
+    /// <param name="address"></param>
+    /// <returns>List of address matches. If no addresses are found, a 404 response is returned.</returns>
+    public async Task<List<Address>?> ValidateAddressAsync(Address address, CancellationToken cancellationToken = default)
+    {
+        var response = await PostRequestAsync<Address, AddressValidationResponse>(TaxjarConstants.AddressesValidateEndpoint, address, cancellationToken).ConfigureAwait(false);
 
-            if (string.IsNullOrWhiteSpace(customerId))
-            {
-                throw new ArgumentException(ErrorMessage.MissingCustomerId);
-            }
+        return response?.Addresses;
+    }
 
-            return customerId;
-        }
+    /// <summary>
+    /// Validates a customer address and returns back a collection of address matches
+    /// </summary>
+    /// <param name="validation"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<ValidationResponseAttributes?> ValidateVatAsync(string vatNumber, CancellationToken cancellationToken = default)
+    {
+        TaxjarRequestValidation.ValidateVat(vatNumber);
 
-        private string GetValueOrDefault(object parameters, PropertyInfo propertyInfo)
-        {
-            return propertyInfo == null ? null : propertyInfo.GetValue(parameters).ToString();
-        }
+        var response = await GetRequestAsync<ValidationResponse>(TaxjarRequestBuilder.ResourcePath(TaxjarConstants.ValidationEndpoint, vatNumber), cancellationToken).ConfigureAwait(false);
+        return response?.Validation;
+    }
 
-        private string GetUserAgent()
-        {
-            string platform = RuntimeInformation.OSDescription;
-            string arch = RuntimeInformation.OSArchitecture.ToString();
-            string framework = RuntimeInformation.FrameworkDescription;
+    private string GetUserAgent()
+    {
+        string platform = RuntimeInformation.OSDescription;
+        string arch = RuntimeInformation.OSArchitecture.ToString();
+        string framework = RuntimeInformation.FrameworkDescription;
 
-            string version = GetType().Assembly.GetName().Version.ToString(3);
+        string version = GetType()?.Assembly?.GetName()?.Version?.ToString(3) ?? options.Value.ApiVersion;
 
-            return $"TaxJar/.NET ({platform}; {arch}; {framework}) taxjar.net/{version}";
-        }
+        return $"TaxJar/.NET ({platform}; {arch}; {framework}) taxjar.net/{version}";
     }
 }

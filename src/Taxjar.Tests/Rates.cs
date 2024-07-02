@@ -1,183 +1,152 @@
-﻿using Newtonsoft.Json;
-using NUnit.Framework;
-using System.Threading.Tasks;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
+﻿using System.Text.Json;
+using FluentAssertions;
+using NSubstitute;
+using RichardSzalay.MockHttp;
+using Taxjar.Tests.Infrastructure;
+using TaxJar.Tests;
+using Taxjar.Tests.Fixtures;
+using Microsoft.Extensions.Options;
+using System.Net;
 
-namespace Taxjar.Tests
+namespace Taxjar.Tests;
+
+[TestFixture]
+public class Rates
 {
-    [TestFixture]
-    public class RatesTests
+    protected IHttpClientFactory httpClientFactory;
+    protected IOptions<TaxjarApiOptions> options = Substitute.For<IOptions<TaxjarApiOptions>>();
+    protected string apiToken;
+    protected string ratesEndpoint;
+    protected Dictionary<string, string> defaultHeaders;
+
+    [SetUp]
+    public void Init()
     {
-        [Test]
-        public void when_showing_tax_rates_for_a_location()
+        apiToken = TaxjarFakes.Faker.Internet.Password();
+        httpClientFactory = Substitute.For<IHttpClientFactory>();
+        options.Value.Returns(new TaxjarApiOptions
         {
-            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates.json"));
+            JsonSerializerOptions = TaxjarConstants.TaxJarDefaultSerializationOptions,
+            ApiToken = TaxjarFakes.Faker.Internet.Password(),
+            ApiUrl = TaxjarFakes.Faker.Internet.UrlWithPath(protocol: "https", domain: "api.taxjartest.com"),
+            ApiVersion = "v2",
+            UseSandbox = false
+        });
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/rates/90002")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        ratesEndpoint = FormatRatesEndpoint(options.Value.ApiUrl);
+        defaultHeaders = new Dictionary<string, string>{
+            {"Authorization", $"Bearer {options.Value.ApiToken}" },
+            {"Accept", "application/json"}
+        };
+    }
 
-            var rates = Bootstrap.client.RatesForLocation("90002");
+    private static string FormatRatesEndpoint(string apiUrl) => $"{apiUrl}/{TaxjarConstants.RatesEndpoint}";
 
-            Assert.AreEqual("90002", rates.Zip);
-            Assert.AreEqual("CA", rates.State);
-            Assert.AreEqual(0.065, rates.StateRate);
-            Assert.AreEqual("LOS ANGELES", rates.County);
-            Assert.AreEqual(0.01, rates.CountyRate);
-            Assert.AreEqual("WATTS", rates.City);
-            Assert.AreEqual(0, rates.CityRate);
-            Assert.AreEqual(0.015, rates.CombinedDistrictRate);
-            Assert.AreEqual(0.09, rates.CombinedRate);
-            Assert.AreEqual(false, rates.FreightTaxable);
-        }
 
-        [Test]
-        public async Task when_showing_tax_rates_for_a_location_async()
-        {
-            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates.json"));
+    [TestCaseSource(typeof(TaxjarTestCaseData), nameof(TaxjarTestCaseData.RatesTestCasesAsync))]
+    public async Task when_showing_tax_rates_for_a_location_async(string jsonFilePath)
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON(jsonFilePath);
+        var expected = JsonSerializer.Deserialize<RateResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var responseBody = JsonSerializer.Serialize(expected!, options.Value.JsonSerializerOptions);
+        var rateAddress = new Address{ Zip = expected!.Rate!.Zip };
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/rates/90002")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        var ratesForLocationEndpoint = $"{ratesEndpoint}/{expected.Rate.Zip}";
 
-            var rates = await Bootstrap.client.RatesForLocationAsync("90002");
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, ratesForLocationEndpoint)
+            .Respond(TaxjarConstants.ContentType, responseBody);
 
-            Assert.AreEqual("90002", rates.Zip);
-            Assert.AreEqual("CA", rates.State);
-            Assert.AreEqual(0.065, rates.StateRate);
-            Assert.AreEqual("LOS ANGELES", rates.County);
-            Assert.AreEqual(0.01, rates.CountyRate);
-            Assert.AreEqual("WATTS", rates.City);
-            Assert.AreEqual(0, rates.CityRate);
-            Assert.AreEqual(0.015, rates.CombinedDistrictRate);
-            Assert.AreEqual(0.09, rates.CombinedRate);
-            Assert.AreEqual(false, rates.FreightTaxable);
-        }
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
 
-        [Test]
-        public void when_showing_tax_rates_for_a_location_sst()
-        {
-            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates_sst.json"));
+        var sut = new TaxjarApi(httpClientFactory, options);
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/rates/05495-2086")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        //act
+        var result = await sut.RatesForLocationAsync(rateAddress);
 
-            var rates = Bootstrap.client.RatesForLocation("05495-2086");
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Rate);
+    }
 
-            Assert.AreEqual("05495-2086", rates.Zip);
-            Assert.AreEqual("US", rates.Country);
-            Assert.AreEqual(0, rates.CountryRate);
-            Assert.AreEqual("VT", rates.State);
-            Assert.AreEqual(0.06, rates.StateRate);
-            Assert.AreEqual("CHITTENDEN", rates.County);
-            Assert.AreEqual(0, rates.CountyRate);
-            Assert.AreEqual("WILLISTON", rates.City);
-            Assert.AreEqual(0, rates.CityRate);
-            Assert.AreEqual(0.01, rates.CombinedDistrictRate);
-            Assert.AreEqual(0.07, rates.CombinedRate);
-            Assert.AreEqual(true, rates.FreightTaxable);
-        }
+    [Test]
+    public async Task when_showing_tax_rates_zip_code_is_null_or_whitesspace()
+    {
+        //arrange
+        var sut = new TaxjarApi(httpClientFactory, options);
 
-        [Test]
-        public void when_showing_tax_rates_for_a_location_ca()
-        {
-            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates_ca.json"));
+        //act
+        Func<Task> act = async () => await sut.RatesForLocationAsync(new Address{ Zip = string.Empty });
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/rates/V5K0A1")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        //assert
+        await act.Should().ThrowAsync<ArgumentNullException>()
+         .WithMessage("*Zip is null or empty!*");
+    }
 
-            var rates = Bootstrap.client.RatesForLocation("V5K0A1");
+    [Test]
+    public async Task when_showing_tax_rates_async()
+    {
+        //arrange
+        var expected = TaxjarFakes.FakeRateResponse().Generate();
+        var address = new Address{ Zip = expected.Rate!.Zip};
+        var jsonData = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
 
-            Assert.AreEqual("V5K0A1", rates.Zip);
-            Assert.AreEqual("Vancouver", rates.City);
-            Assert.AreEqual("BC", rates.State);
-            Assert.AreEqual("CA", rates.Country);
-            Assert.AreEqual(0.12, rates.CombinedRate);
-            Assert.AreEqual(true, rates.FreightTaxable);
-        }
+        var ratesForLocationEndpoint = $"{ratesEndpoint}/{address.Zip}";
 
-        [Test]
-        public void when_showing_tax_rates_for_a_location_au()
-        {
-            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates_au.json"));
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, ratesForLocationEndpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond("application/json", jsonData);
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/rates/2060")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
 
-            var rates = Bootstrap.client.RatesForLocation("2060");
+        var sut = new TaxjarApi(httpClientFactory, options);
 
-            Assert.AreEqual("2060", rates.Zip);
-            Assert.AreEqual("AU", rates.Country);
-            Assert.AreEqual(0.1, rates.CountryRate);
-            Assert.AreEqual(0.1, rates.CombinedRate);
-            Assert.AreEqual(true, rates.FreightTaxable);
-        }
+        //act
+        var result = await sut.RatesForLocationAsync(address);
 
-        [Test]
-        public void when_showing_tax_rates_for_a_location_eu()
-        {
-            var body = JsonConvert.DeserializeObject<RateResponse>(TaxjarFixture.GetJSON("rates_eu.json"));
+        //assert
+        result.Should().NotBeNull();
+        result!.Should().BeEquivalentTo(expected.Rate);
+        result!.Zip.Should().Be(address.Zip);
+    }
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/rates/00150")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
+    [Test]
+    public async Task when_showing_tax_rates_for_a_address_async()
+    {
+        //arrange
+        var expected = TaxjarFakes.FakeRateResponse().Generate();
+        var address = TaxjarFakes.FakeAddress().Generate();
+        var jsonData = JsonSerializer.Serialize(expected, options.Value.JsonSerializerOptions);
 
-            var rates = Bootstrap.client.RatesForLocation("00150");
+        var ratesForLocationEndpoint = $"{ratesEndpoint}/{address.Zip}";
 
-            Assert.AreEqual("FI", rates.Country);
-            Assert.AreEqual("Finland", rates.Name);
-            Assert.AreEqual(0.24, rates.StandardRate);
-            Assert.AreEqual(0, rates.ReducedRate);
-            Assert.AreEqual(0, rates.SuperReducedRate);
-            Assert.AreEqual(0, rates.ParkingRate);
-            Assert.AreEqual(0, rates.DistanceSaleThreshold);
-            Assert.AreEqual(true, rates.FreightTaxable);
-        }
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, ratesForLocationEndpoint)
+            .WithHeaders(defaultHeaders)
+            .WithQueryString($"city={WebUtility.UrlEncode(address.City)}&state={WebUtility.UrlEncode(address.State)}&country={WebUtility.UrlEncode(address.Country)}")
+            .Respond("application/json", jsonData);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.RatesForLocationAsync(address);
+
+        //assert
+        result.Should().NotBeNull();
+        result!.Should().BeEquivalentTo(expected.Rate);
+        result!.Zip.Should().Be(expected.Rate!.Zip);
     }
 }

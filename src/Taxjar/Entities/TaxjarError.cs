@@ -1,16 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Taxjar
 {
-    public class TaxjarError
+    public record TaxjarError
     {
-        [JsonProperty("error")]
-        public string Error { get; set; }
+        [JsonPropertyName("error")]
+        public string Error { get; set; } = string.Empty;
 
-        [JsonProperty("detail")]
-        public string Detail { get; set; }
-
-        [JsonProperty("status")]
-        public string StatusCode { get; set; }
+        [JsonPropertyName("detail")]
+        public string? Detail { get; set; }
+        
+        [JsonPropertyName("status")]
+        [JsonConverter(typeof(TaxjarPolymorphicNumberJsonConverter))]
+        public string StatusCode { get; set; } = string.Empty;
     }
 }

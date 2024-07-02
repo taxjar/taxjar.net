@@ -1,60 +1,59 @@
-﻿using Newtonsoft.Json;
-using NUnit.Framework;
-using System.Threading.Tasks;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
+using System.Text.Json;
+using FluentAssertions;
+using NSubstitute;
+using RichardSzalay.MockHttp;
+using Taxjar.Tests.Infrastructure;
+using Taxjar.Tests.Fixtures;
+using Microsoft.Extensions.Options;
 
-namespace Taxjar.Tests
+namespace Taxjar.Tests;
+
+[TestFixture]
+public class Categories
 {
-    [TestFixture]
-    public class CategoriesTests
+    protected IHttpClientFactory httpClientFactory;
+    protected IOptions<TaxjarApiOptions> options = Substitute.For<IOptions<TaxjarApiOptions>>();
+
+    [SetUp]
+    public void Init()
     {
-        [Test]
-        public void when_listing_tax_categories()
+        httpClientFactory = Substitute.For<IHttpClientFactory>();
+        options.Value.Returns(new TaxjarApiOptions
         {
-            var body = JsonConvert.DeserializeObject<CategoriesResponse>(TaxjarFixture.GetJSON("categories.json"));
+            ApiToken = TaxjarFakes.Faker.Internet.Password(),
+            ApiUrl = TaxjarConstants.DefaultApiUrl
+        });
+    }
 
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/categories")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
 
-            var categories = Bootstrap.client.Categories();
+    [Test]
+    public async Task when_listing_tax_categories_async()
+    {
+        //arrange
+        var body = TaxjarFixture.GetJSON("categories.json");
+        var expected = JsonSerializer.Deserialize<CategoriesResponse>(body);
+        
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, $"{TaxjarConstants.DefaultApiUrl}/{options.Value.ApiVersion}/{TaxjarConstants.CategoriesEndpoint}")
+             .Respond("application/json", body);
 
-            Assert.AreEqual(17, categories.Count);
-            Assert.AreEqual("Clothing", categories[0].Name);
-            Assert.AreEqual("20010", categories[0].ProductTaxCode);
-            Assert.AreEqual("All human wearing apparel suitable for general use", categories[0].Description);
-        }
-
-        [Test]
-        public async Task when_listing_tax_categories_async()
+      
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
         {
-            var body = JsonConvert.DeserializeObject<CategoriesResponse>(TaxjarFixture.GetJSON("categories.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/categories")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var categories = await Bootstrap.client.CategoriesAsync();
-
-            Assert.AreEqual(17, categories.Count);
-            Assert.AreEqual("Clothing", categories[0].Name);
-            Assert.AreEqual("20010", categories[0].ProductTaxCode);
-            Assert.AreEqual("All human wearing apparel suitable for general use", categories[0].Description);
+            BaseAddress = new Uri($"{TaxjarConstants.DefaultApiUrl}/{TaxjarConstants.ApiVersion}")
         }
+        );
+        
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var categories = await sut.CategoriesAsync();
+        
+        //assert
+        categories.Should().NotBeNullOrEmpty();
+        categories.Should().BeEquivalentTo(expected!.Categories);
+
     }
 }

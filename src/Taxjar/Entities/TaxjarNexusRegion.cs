@@ -1,26 +1,38 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Taxjar
 {
-    public class NexusRegionsResponse
+    public record NexusRegionsResponse
     {
-        [JsonProperty("regions")]
-        public List<NexusRegion> Regions { get; set; }
+        [JsonPropertyName("regions")]
+        public List<NexusRegion>? Regions { get; set; }
     }
 
-    public class NexusRegion
+    public record NexusRegion
     {
-        [JsonProperty("country_code")]
-        public string CountryCode { get; set; }
+        ///<summary>
+        ///Two-letter ISO country code for nexus region.
+        ///</summary>
+        [JsonPropertyName("country_code")]
+        public string? CountryCode { get; set; }
 
-        [JsonProperty("country")]
-        public string Country { get; set; }
+        ///<summary>
+        ///Country name for nexus region.
+        ///</summary>
+        [JsonPropertyName("country")]
+        public string? Country { get; set; }
 
-        [JsonProperty("region_code")]
-        public string RegionCode { get; set; }
+        ///<summary>
+        ///Two-letter ISO region code for nexus region.
+        ///</summary>
+        [JsonPropertyName("region_code")]
+        public string? RegionCode { get; set; }
 
-        [JsonProperty("region")]
-        public string Region { get; set; }
+        ///<summary>
+        ///Region name for nexus region.
+        ///</summary>
+        [JsonPropertyName("region")]
+        public string? Region { get; set; }
     }
 }

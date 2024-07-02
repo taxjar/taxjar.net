@@ -1,28 +1,46 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Taxjar
 {
-    public class TaxBreakdownShipping : Breakdown
+    public record TaxBreakdownShipping : Breakdown
     {
-        [JsonProperty("state_sales_tax_rate")]
+        ///<summary>
+        ///Amount of the shipping to be taxed at the state tax rate.
+        ///</summary>
+        [JsonPropertyName("state_sales_tax_rate")]
         public decimal StateSalesTaxRate { get; set; }
 
-        [JsonProperty("state_amount")]
+        ///<summary>
+        ///Amount of the shipping to be taxed by state jurisdiction.
+        ///</summary>
+        [JsonPropertyName("state_amount")]
         public decimal StateAmount { get; set; }
 
-        [JsonProperty("county_amount")]
+        ///<summary>
+        ///Amount of the shipping to be taxed by county jurisdiction.
+        ///</summary>
+        [JsonPropertyName("county_amount")]
         public decimal CountyAmount { get; set; }
 
-        [JsonProperty("city_amount")]
+        ///<summary>
+        ///Amount of the shipping to be taxed by city jurisdiction.
+        ///</summary>
+        [JsonPropertyName("city_amount")]
         public decimal CityAmount { get; set; }
 
-        [JsonProperty("special_taxable_amount")]
+        ///<summary>
+        ///Amount of the shipping to be taxed by special district jurisdiction.
+        ///</summary>
+        [JsonPropertyName("special_taxable_amount")]
         public decimal SpecialDistrictTaxableAmount { get; set; }
 
-        [JsonProperty("special_tax_rate")]
+        ///<summary>
+        ///Amount of the shipping to be taxed at the special district tax rate.
+        ///</summary>
+        [JsonPropertyName("special_tax_rate")]
         public decimal SpecialDistrictTaxRate { get; set; }
 
-        [JsonProperty("special_district_amount")]
+        [JsonPropertyName("special_district_amount")]
         public decimal SpecialDistrictAmount { get; set; }
     }
 }

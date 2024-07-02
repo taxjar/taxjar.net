@@ -1,31 +1,31 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Taxjar
 {
-    public class TaxBreakdownLineItem : Breakdown
+    public record TaxBreakdownLineItem : Breakdown
     {
-        [JsonProperty("id")]
-        public string Id { get; set; }
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
 
-        [JsonProperty("state_sales_tax_rate")]
+        [JsonPropertyName("state_sales_tax_rate")]
         public decimal StateSalesTaxRate { get; set; }
 
-        [JsonProperty("state_amount")]
+        [JsonPropertyName("state_amount")]
         public decimal StateAmount { get; set; }
 
-        [JsonProperty("county_amount")]
+        [JsonPropertyName("county_amount")]
         public decimal CountyAmount { get; set; }
 
-        [JsonProperty("city_amount")]
+        [JsonPropertyName("city_amount")]
         public decimal CityAmount { get; set; }
 
-        [JsonProperty("special_district_taxable_amount")]
+        [JsonPropertyName("special_district_taxable_amount")]
         public decimal SpecialDistrictTaxableAmount { get; set; }
 
-        [JsonProperty("special_tax_rate")]
+        [JsonPropertyName("special_tax_rate")]
         public decimal SpecialTaxRate { get; set; }
 
-        [JsonProperty("special_district_amount")]
+        [JsonPropertyName("special_district_amount")]
         public decimal SpecialDistrictAmount { get; set; }
     }
 }

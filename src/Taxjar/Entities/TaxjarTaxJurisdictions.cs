@@ -1,19 +1,32 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Taxjar
 {
-    public class TaxJurisdictions
+    public record TaxJurisdictions
     {
-        [JsonProperty("country")]
-        public string Country { get; set; }
+        ///<summary>
+        ///Two-letter ISO country code for given location.
+        ///</summary>
+        [JsonPropertyName("country")]
+        public string Country { get; set; } = string.Empty;
 
-        [JsonProperty("state")]
-        public string State { get; set; }
+        ///<summary>
+        ///Postal abbreviated state name for given location.
+        ///</summary>
+        [JsonPropertyName("state")]
+        public string State { get; set; } = string.Empty;
 
-        [JsonProperty("county")]
-        public string County { get; set; }
+        ///<summary>
+        ///County name for given location.
+        ///</summary>
+        [JsonPropertyName("county")]
+        public string County { get; set; } = string.Empty;
 
-        [JsonProperty("city")]
-        public string City { get; set; }
+        ///<summary>
+        ///City name for given location.
+        ///</summary>
+        [JsonPropertyName("city")]
+        public string City { get; set; } = string.Empty;
+
     }
 }

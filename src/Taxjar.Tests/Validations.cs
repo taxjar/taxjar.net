@@ -1,182 +1,154 @@
-﻿using Newtonsoft.Json;
-using NUnit.Framework;
-using System.Threading.Tasks;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
+using System.Text.Json;
+using FluentAssertions;
+using NSubstitute;
+using RichardSzalay.MockHttp;
+using Taxjar;
+using Taxjar.Tests.Infrastructure;
+using Taxjar.Tests.Fixtures;
+using Microsoft.Extensions.Options;
 
-namespace Taxjar.Tests
+namespace TaxJar.Tests;
+
+[TestFixture]
+public class ValidationTests
 {
-    [TestFixture]
-    public class ValidationTests
+    protected IHttpClientFactory httpClientFactory;
+    protected IOptions<TaxjarApiOptions> options = Substitute.For<IOptions<TaxjarApiOptions>>();
+    protected string apiToken;
+    protected string addressValidationEndpoint;
+    protected string validationEndpoint;
+    protected Dictionary<string, string> defaultHeaders;
+
+    [SetUp]
+    public void Init()
     {
-        [SetUp]
-        public static void Init()
+        apiToken = TaxjarFakes.Faker.Internet.Password();
+        httpClientFactory = Substitute.For<IHttpClientFactory>();
+        options.Value.Returns(new TaxjarApiOptions
         {
-            Bootstrap.client = new TaxjarApi(Bootstrap.apiKey, new { apiUrl = "http://localhost:9191" });
-            Bootstrap.server.ResetMappings();
-        }
+            JsonSerializerOptions = TaxjarConstants.TaxJarDefaultSerializationOptions,
+            ApiToken = TaxjarFakes.Faker.Internet.Password(),
+            ApiUrl = TaxjarFakes.Faker.Internet.UrlWithPath(protocol: "https", domain: "api.taxjartest.com"),
+            ApiVersion = "v2",
+            UseSandbox = false
+        });
 
-        [Test]
-        public void when_validating_an_address()
-        {
-            var body = JsonConvert.DeserializeObject<AddressValidationResponse>(TaxjarFixture.GetJSON("addresses.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/addresses/validate")
-                    .UsingPost()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var addresses = Bootstrap.client.ValidateAddress(new
-            {
-                country = "US",
-                state = "AZ",
-                zip = "85297",
-                city = "Gilbert",
-                street = "3301 South Greenfield Rd"
-            });
-
-            Assert.AreEqual("85297-2176", addresses[0].Zip);
-            Assert.AreEqual("3301 S Greenfield Rd", addresses[0].Street);
-            Assert.AreEqual("AZ", addresses[0].State);
-            Assert.AreEqual("US", addresses[0].Country);
-            Assert.AreEqual("Gilbert", addresses[0].City);
-        }
-
-        [Test]
-        public async Task when_validating_an_address_async()
-        {
-            var body = JsonConvert.DeserializeObject<AddressValidationResponse>(TaxjarFixture.GetJSON("addresses.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/addresses/validate")
-                    .UsingPost()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var addresses = await Bootstrap.client.ValidateAddressAsync(new
-            {
-                country = "US",
-                state = "AZ",
-                zip = "85297",
-                city = "Gilbert",
-                street = "3301 South Greenfield Rd"
-            });
-
-            Assert.AreEqual("85297-2176", addresses[0].Zip);
-            Assert.AreEqual("3301 S Greenfield Rd", addresses[0].Street);
-            Assert.AreEqual("AZ", addresses[0].State);
-            Assert.AreEqual("US", addresses[0].Country);
-            Assert.AreEqual("Gilbert", addresses[0].City);
-        }
-
-        [Test]
-        public void when_validating_an_address_with_multiple_matches()
-        {
-            var body = JsonConvert.DeserializeObject<AddressValidationResponse>(TaxjarFixture.GetJSON("addresses_multiple.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/addresses/validate")
-                    .UsingPost()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var addresses = Bootstrap.client.ValidateAddress(new
-            {
-                state = "AZ",
-                city = "Phoenix",
-                street = "1109 9th"
-            });
-
-            Assert.AreEqual("85007-3646", addresses[0].Zip);
-            Assert.AreEqual("1109 S 9th Ave", addresses[0].Street);
-            Assert.AreEqual("AZ", addresses[0].State);
-            Assert.AreEqual("US", addresses[0].Country);
-            Assert.AreEqual("Phoenix", addresses[0].City);
-
-            Assert.AreEqual("85006-2734", addresses[1].Zip);
-            Assert.AreEqual("1109 N 9th St", addresses[1].Street);
-            Assert.AreEqual("AZ", addresses[1].State);
-            Assert.AreEqual("US", addresses[1].Country);
-            Assert.AreEqual("Phoenix", addresses[1].City);
-        }
-
-        [Test]
-        public void when_validating_a_vat_number()
-        {
-            var body = JsonConvert.DeserializeObject<ValidationResponse>(TaxjarFixture.GetJSON("validation.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/validation")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var validation = Bootstrap.client.ValidateVat(new {
-                vat = "FR40303265045"
-            });
-
-            Assert.AreEqual(true, validation.Valid);
-            Assert.AreEqual(true, validation.Exists);
-            Assert.AreEqual(true, validation.ViesAvailable);
-            Assert.AreEqual("FR", validation.ViesResponse.CountryCode);
-            Assert.AreEqual("40303265045", validation.ViesResponse.VatNumber);
-            Assert.AreEqual("2016-02-10", validation.ViesResponse.RequestDate);
-            Assert.AreEqual(true, validation.ViesResponse.Valid);
-            Assert.AreEqual("SA SODIMAS", validation.ViesResponse.Name);
-            Assert.AreEqual("11 RUE AMPEREn26600 PONT DE L ISERE", validation.ViesResponse.Address);
-        }
-
-        [Test]
-        public async Task when_validating_a_vat_number_async()
-        {
-            var body = JsonConvert.DeserializeObject<ValidationResponse>(TaxjarFixture.GetJSON("validation.json"));
-
-            Bootstrap.server.Given(
-                Request.Create()
-                    .WithPath("/v2/validation")
-                    .UsingGet()
-            ).RespondWith(
-                Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBodyAsJson(body)
-            );
-
-            var validation = await Bootstrap.client.ValidateVatAsync(new
-            {
-                vat = "FR40303265045"
-            });
-
-            Assert.AreEqual(true, validation.Valid);
-            Assert.AreEqual(true, validation.Exists);
-            Assert.AreEqual(true, validation.ViesAvailable);
-            Assert.AreEqual("FR", validation.ViesResponse.CountryCode);
-            Assert.AreEqual("40303265045", validation.ViesResponse.VatNumber);
-            Assert.AreEqual("2016-02-10", validation.ViesResponse.RequestDate);
-            Assert.AreEqual(true, validation.ViesResponse.Valid);
-            Assert.AreEqual("SA SODIMAS", validation.ViesResponse.Name);
-            Assert.AreEqual("11 RUE AMPEREn26600 PONT DE L ISERE", validation.ViesResponse.Address);
-        }
+        addressValidationEndpoint = $"{options.Value.ApiUrl}/{TaxjarConstants.AddressesValidateEndpoint}";
+        validationEndpoint = $"{options.Value.ApiUrl}/{TaxjarConstants.ValidationEndpoint}";
+        defaultHeaders = new Dictionary<string, string>{
+            {"Authorization", $"Bearer {options.Value.ApiToken}" },
+            {"Accept", "application/json"}
+        };
     }
+
+    [Test]
+    public async Task when_validating_an_address_async()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("addresses.json");
+        var expected = JsonSerializer.Deserialize<AddressValidationResponse>(jsonData, options.Value.JsonSerializerOptions);
+        
+        var request = expected!.Addresses![0];
+        var jsonRequestBody = JsonSerializer.Serialize(request, options.Value.JsonSerializerOptions);
+
+        var jsonResponseBody = JsonSerializer.Serialize(expected!, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Post, addressValidationEndpoint)
+            .WithContent(jsonRequestBody)
+            .WithHeaders(defaultHeaders)
+            .Respond(TaxjarConstants.ContentType, jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.ValidateAddressAsync(request);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Addresses!);
+    }
+
+    [Test]
+    public async Task when_validating_an_address_with_multiple_matches()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("addresses_multiple.json");
+        var expected = JsonSerializer.Deserialize<AddressValidationResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var request = expected!.Addresses![0];
+        var jsonRequestBody = JsonSerializer.Serialize(request, options.Value.JsonSerializerOptions);
+
+        var jsonResponseBody = JsonSerializer.Serialize(expected!, options.Value.JsonSerializerOptions);
+
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Post, addressValidationEndpoint)
+            .WithContent(jsonRequestBody)
+            .WithHeaders(defaultHeaders)
+            .Respond(TaxjarConstants.ContentType, jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.ValidateAddressAsync(request);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Addresses!);
+    }
+
+    [Test]
+    public async Task when_validating_a_vat_number_async()
+    {
+        //arrange
+        var jsonData = TaxjarFixture.GetJSON("validation.json");
+        var expected = JsonSerializer.Deserialize<ValidationResponse>(jsonData, options.Value.JsonSerializerOptions);
+        var vatNumber = expected!.Validation!.ViesResponse!.VatNumber;
+
+        var jsonResponseBody = JsonSerializer.Serialize(expected!, options.Value.JsonSerializerOptions);
+        var endpoint = $"{validationEndpoint}/{vatNumber}";
+        
+        var handler = new MockHttpMessageHandler();
+        handler
+            .When(HttpMethod.Get, endpoint)
+            .WithHeaders(defaultHeaders)
+            .Respond(TaxjarConstants.ContentType, jsonResponseBody);
+
+        httpClientFactory.CreateClient(nameof(TaxjarApi))
+        .Returns(new HttpClient(handler)
+        );
+
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act
+        var result = await sut.ValidateVatAsync(vatNumber);
+
+        //assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(expected!.Validation);
+    }
+
+    [Test]
+    public async Task when_validating_a_vat_number_without_vat_throws_async()
+    {
+        //arrange
+        var sut = new TaxjarApi(httpClientFactory, options);
+
+        //act 
+        Func<Task> act = async () => await sut.ValidateVatAsync(string.Empty);
+
+        //assert
+        await act.Should().ThrowAsync<ArgumentException>()
+        .WithMessage("*VAT cannot be null or an empty string.*");
+    }
+
 }
