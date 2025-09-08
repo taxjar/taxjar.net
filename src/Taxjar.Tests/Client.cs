@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using Newtonsoft.Json;
@@ -166,7 +166,7 @@ namespace Taxjar.Tests
 
             var systemException = Assert.Throws<Exception>(() => Bootstrap.client.Categories());
 
-            Assert.AreEqual("A task was canceled.", systemException.Message);
+            Assert.AreEqual("The operation was canceled.", systemException.Message);
         }
     }
 }
