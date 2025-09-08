@@ -45,12 +45,12 @@ namespace Taxjar
 
                 if (parameters.GetType().GetProperty("headers") != null)
                 {
-                    headers = (IDictionary<string, string>)parameters.GetType().GetProperty("headers").GetValue(parameters);
+                    headers = (IDictionary<string, string>) parameters.GetType().GetProperty("headers").GetValue(parameters);
                 }
 
                 if (parameters.GetType().GetProperty("timeout") != null)
                 {
-                    timeout = (int)parameters.GetType().GetProperty("timeout").GetValue(parameters);
+                    timeout = (int) parameters.GetType().GetProperty("timeout").GetValue(parameters);
                 }
             }
 
