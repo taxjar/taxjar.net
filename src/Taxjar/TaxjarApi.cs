@@ -98,7 +98,8 @@ namespace Taxjar
             request.AddHeader("Authorization", "Bearer " + apiToken);
             request.AddHeader("User-Agent", GetUserAgent());
 
-            request.Timeout = timeout;
+            if (timeout > 0)
+                request.Timeout = TimeSpan.FromMilliseconds(timeout);
 
             if (body != null)
             {
