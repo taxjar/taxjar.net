@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-07-23
+- Update RestSharp to version 114.0.0 (breaking: timeout behavior change)
+- Fix timeout handling for RestSharp 107+ TimeSpan API
+
 ## [4.0.0] - 2023-11-07
 - Update RestSharp to version 108.0.3
 - Update Newtonsoft.Json to version 13.0.3
@@ -105,7 +109,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.0.0] - 2016-09-20
 - Initial release
 
-[Unreleased]: https://github.com/taxjar/taxjar.net/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/taxjar/taxjar.net/compare/v5.0.0...HEAD
+[5.0.0]: https://github.com/taxjar/taxjar.net/compare/v4.0.0...v5.0.0
 [4.0.0]: https://github.com/taxjar/taxjar.net/compare/v3.3.2...v4.0.0
 [3.3.2]: https://github.com/taxjar/taxjar.net/compare/v3.3.1...v3.3.2
 [3.3.1]: https://github.com/taxjar/taxjar.net/compare/v3.3.0...v3.3.1
